@@ -1,0 +1,145 @@
+/*body {
+    width: 1cm;
+}
+*/
+
+/** {*/
+    /*margin: 0;*/
+    /*padding: 0;*/
+/*}*/
+
+
+
+body{
+    /*margin: -20px 5px -100px 20px;*/
+    margin: 30mm 8mm 30mm 8mm;
+    /*font-family: sans-serif;*/
+    font-family: "Times New Roman", serif;
+}
+
+
+@page {
+    margin: 180px 5px 100px 5px;
+    /*margin: 180px 5px;*/
+}
+
+.header {
+    position: fixed;
+    top:-155px;
+    left: 0;
+    right: 0;
+    height: 150px;
+    /*background-color: orange;*/
+    text-align: left;
+    /*padding: 5px;*/
+    /*border-bottom: 2px solid #ddd;*/
+    font-size: 10px;
+}
+.header h1{
+    margin: 10px 0;
+}
+.header h2{
+    margin: 0 0 10px 0;
+}
+
+.footer {
+    position: absolute;
+    left: 50px;
+    bottom: 25px;
+    right: 50px;
+    height: 0px;
+    /*background-color: lightblue;*/
+    /*border-top: 2px solid #ddd;*/
+    font-size: 11px;
+    /*color: #0a568c;*/
+    /*clear: both;*/
+}
+/*footer .page:after {*/
+    /*content: counter(page);*/
+/*}*/
+.footer table {
+    width: 100%;
+    text-align: center;
+}
+/*footer p {*/
+    /*text-align: right;*/
+/*}*/
+.footer .izq {
+    text-align: left;
+}
+
+.footer .page:after { content: counter(page, decimal);}
+
+.limpia_float {
+    clear: both;/*  hace k el segundo parrafo ya no flote a la izquierda del div o sea rompe el float k tiene el div*/
+}
+
+
+
+.content {
+    /*width: 100%;*/
+    /*left: 5px;*/
+    /*top: auto;*/
+    /*right: 5px;*/
+    font-size: 8px;
+    /*display: inline-block;*/
+    /*padding: 5px;*/
+    margin: 0 20px 0 20px;
+/*float: left;*/
+    position: relative;
+}
+
+
+
+.logo_img{
+    width: 232px;
+    height: 108px;
+    background: url(../images/ministerio.png) no-repeat;
+    /*border: 1px ;*/
+    /*border-style: dashed;*/
+    border-color:#090c29;
+    text-align: center;
+    display:inline-block;
+    padding: 0;
+    margin: 0;
+    position: absolute;
+    /*bottom:  150px;*/
+    /*right: 10px;*/
+}
+
+/*.tijera{*/
+    /*width: 20px;*/
+    /*height: 17px;*/
+    /*background: url(../img/camp/tijera.png) no-repeat;*/
+    /*text-align: center;*/
+    /*display:inline-block;*/
+    /*padding: 0;*/
+    /*margin: 0;*/
+    /*position: absolute;*/
+    /*bottom: 500px;*/
+    /*right: 240px;*/
+/*}*/
+
+/*th {*/
+    /*font-weight: bold;*/
+    /*text-align: left;*/
+
+/*}*/
+
+/*td {*/
+    /*text-decoration: underline;*/
+/*}*/
+
+/*!*salto de pagina en el pdf*!*/
+.page-break {
+    page-break-after: always;
+    /*page-break-before: always;*/
+}
+
+
+.nobreak {
+    page-break-inside: avoid;
+}
+
+
+

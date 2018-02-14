@@ -6,11 +6,19 @@ use Illuminate\Database\Eloquent\Model;
 
 class Pac extends Model
 {
-    
+
+    const PERMITIR_REFORMAR_PAC='1';
+    const NO_REFORMAR_PAC='0';
+
     protected $fillable=[
-        'area_item_id','trabajador_id','cod_item','item','presupuesto','devengado','disponible','mes'
+        'area_item_id','trabajador_id','cod_item','item','presupuesto','devengado','disponible','mes','reform'
         
     ];
+
+    public function esRoformable()
+    {
+        return $this->reform=Pac::PERMITIR_REFORMAR_PAC;
+    }
     
     public function area_item()
     {
@@ -31,7 +39,5 @@ class Pac extends Model
     {
         return $this->hasMany('App\Cpac');
     }
-
-
 
 }

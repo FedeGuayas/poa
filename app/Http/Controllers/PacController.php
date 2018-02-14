@@ -95,7 +95,7 @@ class PacController extends Controller
                 ->join('areas as a', 'a.id', '=', 'ai.area_id')
                 ->join('workers as w', 'w.id', '=', 'p.worker_id')
                 ->join('departamentos as d', 'd.id', '=', 'w.departamento_id')
-                ->select('p.id', 'p.cod_item', 'p.item', 'm.month as mes', 'm.cod', 'p.presupuesto', 'p.disponible', 'p.devengado', 'w.nombres', 'w.apellidos', 'w.id as trabajador_id', 'a.area', 'p.procedimiento', 'p.concepto', 'p.comprometido', 'i.cod_programa', 'i.cod_actividad', 'd.area_id as area_trabajador', 'd.departamento', 'ai.area_id as aiID')
+                ->select('p.id', 'p.cod_item', 'p.item', 'm.month as mes', 'm.cod', 'p.presupuesto', 'p.disponible', 'p.devengado','p.reform', 'w.nombres', 'w.apellidos', 'w.id as trabajador_id', 'a.area', 'p.procedimiento', 'p.concepto', 'p.comprometido', 'i.cod_programa', 'i.cod_actividad', 'd.area_id as area_trabajador', 'd.departamento', 'ai.area_id as aiID')
 //            ->where('a.id',$area_select)
                 ->where('ai.area_id', 'like', '%' . $area_select . '%')
                 ->get();
@@ -521,6 +521,43 @@ class PacController extends Controller
                 return back()->with(['message_danger' => 'NO existe certificaión para el pac seleccionado. O no se encuentra la CPAC']);
             }
         } else return back()->with(['message_danger' => 'Error!, PAC no encontrado']);
+
+    }
+
+    /**
+     * Habilitar el disponible del proceso para que pueda ser reformado
+     */
+    public function permitReform(Request $request, $pac_id)
+    {
+        $pac=Pac::where('id',$pac_id)->first();
+
+        $user_login = $request->user();
+
+//        if ($user_login->worker_id==$pac->trabajador_id) {
+
+            $pac->reform=Pac::PERMITIR_REFORMAR_PAC;
+            $pac->update();
+
+            $message = 'El monto disponible está disponible para reformas';
+
+            return redirect()->route('admin.pacs.index')->with($message);
+
+//        } else return abort(403);
+    }
+
+
+    /**
+     * Correo de notificacion de liberacion de recursos en un pac para los analistas de reformas
+     * @param $user
+     * @param $pass
+     */
+    public function sendPacResourcesToReformUsersMail($user, $pass)
+    {
+        Mail::send('emails.new_user', ['user' => $user, 'pass' => $pass], function ($message) use ($user) {
+            $message->from('admin@fedeguayas.com.ec', 'Sistema Gestión del POA');
+            $message->subject('Creación de cuenta de usuario');
+            $message->to($user->email);
+        });
 
     }
 

@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Area;
+use App\Departamento;
 use App\Detalle;
 use App\Pac;
+use App\Worker;
 use Illuminate\Http\Request;
 
 use App\Http\Requests\GestionStoreRequest;
@@ -55,11 +58,29 @@ class DetalleController extends Controller
 
         if ($user_login->can('gestion-procesos')) {
 
-
             $data = $request->all();
             $pac_id = key($data);
-            $pac = Pac::where('id', $pac_id)->first();
-            return view('detalles.create', compact('pac'));
+            $pac = Pac::with('worker','area_item')->where('id', $pac_id)->first();
+
+            $area_id=$user_login->worker->departamento->area_id;
+            $area = Area::where('id',$area_id)->first();//area ala que pertenece el trabajador
+
+            $workers='';
+
+            if ($area)
+            {
+                //trabajadores que pertenecen al mismo area del trabajador logeado
+                $workers_all = Worker::with('user')->whereHas('departamento', function ($query) use ($area_id){
+                    $query->where('area_id',$area_id);
+                })->get();
+
+                //trabajadores del mismo area del usuario logeado y que tienen como rol analista(usuario con permisos para reformas)
+                $workers = $workers_all->filter(function ($value, $key) {
+                    return $value->user->hasRole('analista');
+                });
+            }
+
+            return view('detalles.create', compact('pac','workers'));
 
         }else return abort(403);
     }

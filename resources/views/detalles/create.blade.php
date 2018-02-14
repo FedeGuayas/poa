@@ -15,7 +15,22 @@
     {!! Form::open(['route'=>'admin.gestion.store','method'=>'post']) !!}
     {!! Form::hidden('pac_id',$pac->id,['id'=>'pac_id']) !!}
 
-    <h4>Disponible: <span class="label label-warning">$ {{$pac->disponible}}</span></h4>
+    <div class="row">
+        <div class="col-md-2 col-sm-6">
+            <h4>Disponible: <span class="label label-warning">$ {{$pac->disponible}}</span></h4>
+        </div>
+        <div class="col-md-2 col-sm-6">
+            <a href="#permitReform" data-toggle="modal"
+               class="btn btn-xs btn-danger tip" data-placement="top"
+               title="Monto no utilizado, para reformar" target="_blank">
+                <i class="fa fa-recycle" aria-hidden="true"></i> A Reformar
+            </a>
+            {{--<a href="{{route('pac.permitReform',$pac->id)}}">--}}
+{{--                {!! Form::button('<i class="fa fa-recycle" aria-hidden="true"></i> A Reformar',['class'=>'btn btn-sm btn-danger tip','data-placement'=>'top', 'title'=>'Monto no utilizado, para reformar']) !!}--}}
+            {{--</a>--}}
+        </div>
+    </div>
+
     <div class="row">
         <div class="col-lg-10">
             <div class="col-lg-3">
@@ -87,9 +102,8 @@
     </div>
 
 
-
     {!! Form::close() !!}
-
+@include('pac.permit-reform-modal')
 @endsection
 
 @section('scripts')
@@ -193,5 +207,16 @@
             });
 
         });
+
+        $('#permitReform').on('show.bs.modal', function (event) {
+//            var button = $(event.relatedTarget); // Button that triggered the modal
+//            var de = button.data('user'); // Extract info from data-* attributes
+//            // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
+//            // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
+//            var modal = $(this);
+//            modal.find('.modal-title').text('NUevo men message to ' + de);
+//            modal.find('.modal-body input').val(de);
+        });
+
     </script>
 @endsection

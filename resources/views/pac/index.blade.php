@@ -92,7 +92,18 @@
                                 <td>$ {{$pac->presupuesto}}</td>
                                 <td>$ {{$pac->comprometido}} </td>
                                 <td>$ {{$pac->devengado}}</td>
-                                <td>$ {{$pac->disponible}}</td>
+                                <td>
+                                    @if ($pac->reform== \App\Pac::PERMITIR_REFORMAR_PAC)
+                                        <i class="text-success fa fa-check-circle tip" data-placement="top"
+                                           title="Permitido reformas sobre este pac"> </i>
+                                            $ {{$pac->disponible}}
+
+                                    @else
+                                        <i class="text-danger fa fa-ban tip" data-placement="top"
+                                           title="No se permiten reformas sobre este pac"> </i>
+                                            $ {{$pac->disponible}}
+                                    @endif
+                                </td>
                                 <td>
                                     @permission('certificacion-pac')
                                     <a href="{{route('admin.pacs.certificacion-pac',$pac->id)}}"
@@ -118,7 +129,7 @@
                                 <td>
                                     @permission('gestion-procesos')
                                     @if($pac->disponible > 0)
-                                        @if (Auth::user()->worker_id==$pac->trabajador_id && !is_null($pac->certificado_file))
+                                        @if ((Auth::user()->worker_id==$pac->trabajador_id) && (!is_null($pac->certificado_file)) && ($pac->reform== \App\Pac::NO_REFORMAR_PAC))
                                             <a href="{{route('admin.gestion.create',$pac->id)}}"
                                                class="btn btn-xs btn-primary tip"
                                                data-placement="top" title="Gestión">
@@ -127,12 +138,14 @@
                                         @endif
                                     @endif
                                     @endpermission
+
                                     <a href="{{route('admin.gestion.show',$pac->id)}}" class="btn btn-xs btn-info tip"
                                        data-placement="top" title="Ver Gestión"><i class="fa fa-eye"
                                                                                    aria-hidden="true"></i>
                                     </a>
+
                                     @permission('solicita-reformas')
-                                    @if($pac->disponible > 0)
+                                    @if($pac->disponible > 0 && ($pac->reform== \App\Pac::PERMITIR_REFORMAR_PAC))
                                         {{--reformas solo a mes actual o superior--}}
                                         @if ($pac->cod >= $mes_actual)
                                             <a href="{{route('createReforma',$pac->id)}}"
@@ -263,7 +276,7 @@
                     $(api.column(7).footer()).html('$' + pageTotal_pre + '<p style="color: #0c199c">' + ' ( $' + total_presupuesto + ' )' + '</p>');
                     $(api.column(8).footer()).html('$' + pageTotal_eje + '<p style="color: #0c199c">' + ' ( $' + total_ejecutado + ' )' + '</p>');
                     $(api.column(9).footer()).html('$' + pageTotal_dev + '<p style="color: #0c199c">' + ' ( $' + total_devengado + ' )' + '</p>');
-                    $(api.column(10).footer()).html('$' + pageTotal_disp + '<p style="color: #0c199c">' + ' ( $' + total_disponible + ' )' + '</p>');
+//                    $(api.column(10).footer()).html('$' + pageTotal_disp + '<p style="color: #0c199c">' + ' ( $' + total_disponible + ' )' + '</p>');
                 },
                 dom: 'Blfrtip',
                 buttons: [

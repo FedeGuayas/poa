@@ -66,7 +66,7 @@ Route::group(['prefix' => 'admin','middleware'=>'auth'], function () {
     //Descargar pdf CPAC
     Route::get('pac/{pac_id}/CPACDownload',['uses'=>'PacController@CPACDownload','as' => 'pac.CPACdownload']);
     //permitir reformar disponible del proceso pac
-    Route::get('pac/{pac_id}/to_reform',['uses'=>'PacController@permitReform','as'=>'pac.permitReform']);
+    Route::put('pac/{pac_id}/to_reform',['uses'=>'PacController@permitReform','as'=>'pac.permitReform']);
 
     Route::get('poafdg/planificacion',['uses'=>'PoaController@poaFDG', 'as'=>'poaFDG']);
     Route::get('item',['uses'=>'PoaController@getItem', 'as'=>'getItem']);

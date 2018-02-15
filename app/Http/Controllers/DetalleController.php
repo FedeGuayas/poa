@@ -63,7 +63,7 @@ class DetalleController extends Controller
             $pac = Pac::with('worker','area_item')->where('id', $pac_id)->first();
 
             $area_id=$user_login->worker->departamento->area_id;
-            $area = Area::where('id',$area_id)->first();//area ala que pertenece el trabajador
+            $area = Area::where('id',$area_id)->first();//area a la que pertenece el trabajador
 
             $workers='';
 
@@ -76,8 +76,8 @@ class DetalleController extends Controller
 
                 //trabajadores del mismo area del usuario logeado y que tienen como rol analista(usuario con permisos para reformas)
                 $workers = $workers_all->filter(function ($value, $key) {
-                    return $value->user->hasRole('analista');
-                });
+                    return $value->user->hasRole('analista')==true;
+                })->values();
             }
 
             return view('detalles.create', compact('pac','workers'));

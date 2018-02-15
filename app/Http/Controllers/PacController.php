@@ -16,6 +16,7 @@ use Barryvdh\DomPDF\Facade as PDF;
 use App\Http\Requests\PacStoreRequest;
 use DB;
 use App\Http\Requests;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 
 class PacController extends Controller
@@ -95,7 +96,7 @@ class PacController extends Controller
                 ->join('areas as a', 'a.id', '=', 'ai.area_id')
                 ->join('workers as w', 'w.id', '=', 'p.worker_id')
                 ->join('departamentos as d', 'd.id', '=', 'w.departamento_id')
-                ->select('p.id', 'p.cod_item', 'p.item', 'm.month as mes', 'm.cod', 'p.presupuesto', 'p.disponible', 'p.devengado','p.reform', 'w.nombres', 'w.apellidos', 'w.id as trabajador_id', 'a.area', 'p.procedimiento', 'p.concepto', 'p.comprometido', 'i.cod_programa', 'i.cod_actividad', 'd.area_id as area_trabajador', 'd.departamento', 'ai.area_id as aiID')
+                ->select('p.id', 'p.cod_item', 'p.item', 'm.month as mes', 'm.cod', 'p.presupuesto', 'p.disponible', 'p.devengado', 'p.reform', 'w.nombres', 'w.apellidos', 'w.id as trabajador_id', 'a.area', 'p.procedimiento', 'p.concepto', 'p.comprometido', 'i.cod_programa', 'i.cod_actividad', 'd.area_id as area_trabajador', 'd.departamento', 'ai.area_id as aiID')
 //            ->where('a.id',$area_select)
                 ->where('ai.area_id', 'like', '%' . $area_select . '%')
                 ->get();
@@ -525,22 +526,36 @@ class PacController extends Controller
     }
 
     /**
-     * Habilitar el disponible del proceso para que pueda ser reformado
+     * Habilitar el disponible del proceso para que pueda ser reformado y
+     * Permitir reformas sobre monto que no será utilizado
      */
     public function permitReform(Request $request, $pac_id)
     {
-        $pac=Pac::where('id',$pac_id)->first();
+        $de = trim($request->input('user-from')); //"admin admin ( admin@mail.com )"
+        $parte1 = explode('(', $de); //array:2 [0 => "admin admin " 1 => " admin@mail.com )"]
+        $parte2 = explode(')', $parte1[1]); //array:2 [0 => " admin@mail.com " 1 => ""]
+        $user_from = trim($parte2[0]); //email del usuario que envia
 
-        $user_login = $request->user();
+        $para = trim($request->input('user-to'));
+
+        $users_to = array_filter(explode(";", $para));//arreglo de direcciones de correo de los destinatarios
+
+        $message_note = strtoupper(trim($request->input('message-note')));
+        $message_text = strtoupper(trim($request->input('message-text')));
+
+        $pac = Pac::where('id', $pac_id)->first();
+
+//        $user_login = $request->user();
 
 //        if ($user_login->worker_id==$pac->trabajador_id) {
 
-            $pac->reform=Pac::PERMITIR_REFORMAR_PAC;
-            $pac->update();
+        $this->sendPacResourcesToReformUsersMail($user_from, $users_to, $message_note, $message_text);
 
-            $message = 'El monto disponible está disponible para reformas';
+        $pac->reform=Pac::PERMITIR_REFORMAR_PAC;
+        $pac->update();
 
-            return redirect()->route('admin.pacs.index')->with($message);
+        $message = 'Monto disponible para reformas';
+        return redirect()->route('admin.pacs.index')->with($message);
 
 //        } else return abort(403);
     }
@@ -551,12 +566,18 @@ class PacController extends Controller
      * @param $user
      * @param $pass
      */
-    public function sendPacResourcesToReformUsersMail($user, $pass)
+    public function sendPacResourcesToReformUsersMail($user_from, $users_to, $notes, $message_text)
     {
-        Mail::send('emails.new_user', ['user' => $user, 'pass' => $pass], function ($message) use ($user) {
-            $message->from('admin@fedeguayas.com.ec', 'Sistema Gestión del POA');
-            $message->subject('Creación de cuenta de usuario');
-            $message->to($user->email);
+        Mail::send('emails.new_resources_to_reform', ['note' => $notes, 'message_text' => $message_text], function ($message) use ($user_from, $users_to) {
+
+                $message->from('admin@fedeguayas.com.ec', 'Sistema Gestión del POA');
+                $message->subject('Recursos disponibles en PAC para reforma');
+                $message->cc($user_from);
+                $message->replyTo($user_from);
+                $message->to($users_to);
+
+
+
         });
 
     }

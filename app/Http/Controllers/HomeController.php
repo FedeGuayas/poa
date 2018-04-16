@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests;
+use App\Month;
 use Illuminate\Http\Request;
 
 use Carbon\Carbon;
@@ -29,14 +30,10 @@ class HomeController extends Controller
     public function index(Request $request)
     {
         setlocale(LC_TIME, 'es');
-        $mes = $request->input('mes');
         $fecha_actual=Carbon::now();
-        $month = $fecha_actual->formatLocalized('%B');
+        $mes=$fecha_actual->month;
 
-        $mes='ENERO';
-        if ($mes===null){
-            $mes=strtoupper($month);
-        }
+        $month = Month::select('month')->where('cod',$mes)->first();
 
         $resumen = DB::table('areas as a')
             ->select('cod_programa','cod_actividad','cod_item','planificado','area','ai.mes',DB::raw('IFNULL(extra, 0) extra'), DB::raw('IFNULL(planificado+extra, planificado) total'), 'devengado')
@@ -62,21 +59,16 @@ class HomeController extends Controller
             ->where('ai.mes', '=',$mes)
             ->get();
 
-
-
         $resumenArray=[];
         foreach ($resumen as $r){
             $resumenArray[] = [
                 'labels' => $r->area,
-                'eje' => round($r->devengado/$r->total*100,2),
-                'no_eje'=>round(100-($r->devengado/$r->total*100),2),
+                'eje' => round(($r->devengado-$r->extra)/($r->planificado)*100,2),
+                'no_eje'=>round(100-(($r->devengado-$r->extra)/($r->planificado)*100),2),
             ];
         }
 
-
-
-
-        return view('welcome',compact('resumenArray'));
+        return view('welcome',compact('resumenArray','month'));
     }
 
 }

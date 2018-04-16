@@ -59,6 +59,7 @@ class ExtraController extends Controller
      */
     public function store(Request $request)
     {
+
         try {
             DB::beginTransaction();
             $item = Item::where('id', $request->input('item'))->first();
@@ -75,12 +76,16 @@ class ExtraController extends Controller
 //                    new App\Comment(['message' => 'A new comment.']),
 //                    new App\Comment(['message' => 'Another comment.']),
 //                ]);
-                $area_item->extras()->create([
-                    "area_id" =>$areas[$cont],
-                    'monto' => $montos[$cont],
-                     'mes' => $meses[$cont],
-                    'item_id' => $item->id]
-            );
+                if ($area_item){
+                    $area_item->extras()->create([
+                            "area_id" =>$areas[$cont],
+                            'monto' => $montos[$cont],
+                            'mes' => $meses[$cont],
+                            'item_id' => $item->id]
+                    );
+                }else{
+                    return redirect()->route('admin.ingresos.index')->with('message_danger', 'Error no existe el POA al que esta agregando ingresos');
+                }
                 $cont++;
             }
 
@@ -88,9 +93,9 @@ class ExtraController extends Controller
             return redirect()->route('admin.ingresos.index')->with('message', 'Ingresos guardados');
         } catch (\Exception $e) {
             DB::rollback();
-//            return redirect()->route('admin.ingresos.index')->with('message_danger', 'Error no se guardaron los registros');
+            return redirect()->route('admin.ingresos.index')->with('message_danger', 'Error no se guardaron los registros');
 //                return redirect()->route('poaFDG')->with('message_danger',$e->getMessage());
-                return response()->json([ "response" => $e->getMessage(),"tipo" => "error"]);
+//                return response()->json([ "response" => $e->getMessage(),"tipo" => "error"]);
         }
     }
 

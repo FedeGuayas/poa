@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class PacOrigen extends Model
 {
+    const PACORIGEN_APROBADA='A';
+    const PACORIGEN_PENDIENTE='P';
+
     protected $table='pac_origen';
 
     protected $fillable = [

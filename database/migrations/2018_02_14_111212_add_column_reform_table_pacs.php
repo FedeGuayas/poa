@@ -6,6 +6,7 @@ use Illuminate\Database\Migrations\Migration;
 class AddColumnReformTablePacs extends Migration
 {
     /**
+     * Bandera para saber si hay que hacer reforma cuando se sube el SRPAC reform=1 necesita reforma
      * Run the migrations.
      *
      * @return void

@@ -39,6 +39,14 @@ class DepartamentoSeeder extends Seeder
             'area_id'=>7,
             'departamento'=>'DIRECCIÓN',
         ]);
+        DB::table('departamentos')->insert([
+            'area_id'=>8,
+            'departamento'=>'DIRECCIÓN',
+        ]);
+        DB::table('departamentos')->insert([
+            'area_id'=>9,
+            'departamento'=>'DIRECCIÓN',
+        ]);
 
     }
 }

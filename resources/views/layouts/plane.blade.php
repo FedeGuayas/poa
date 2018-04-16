@@ -14,7 +14,6 @@
         @endif
     </title>
 
-
     <!-- Bootstrap CSS-->
     <link rel="stylesheet" href="{{ asset("plugins/bootstrap/css/bootstrap.min.css") }}"/>
     <!-- Bootstrap-Select CSS-->
@@ -35,6 +34,10 @@
 
     {{--Chart JS--}}
     <script src="{{ asset("plugins/chartjs/Chart.min.js") }}" type="text/javascript"></script>
+
+    {{--Pace JS--}}
+    <script src="{{asset('plugins/pace/pace.min.js')}}"></script>
+    <link href="{{asset('plugins/pace/themes/pink/pace-theme-loading-bar.css')}}" rel="stylesheet" />
 
     <!-- Boton ir arriba CSS-->
     <link rel="stylesheet" href="{{ asset("css/myStyles.css") }}"/>
@@ -84,7 +87,6 @@
 <script src="{{ asset("js/myScripts.js") }}"></script>
 
 @yield('scripts')
-
 
 </body>
 </html>

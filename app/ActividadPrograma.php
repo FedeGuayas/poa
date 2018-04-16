@@ -12,4 +12,14 @@ class ActividadPrograma extends Model
     {
         return $this->hasMany('App\Item');
     }
+
+    public function actividad()
+    {
+        return $this->belongsTo('App\Actividad');
+    }
+
+    public function programa()
+    {
+        return $this->belongsTo('App\Programa');
+    }
 }

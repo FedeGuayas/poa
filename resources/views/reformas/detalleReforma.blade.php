@@ -34,7 +34,7 @@
                                 <td>$ {{$reforma->monto_orig}}</td>
                                 <td> {{$reforma->mes}}</td>
                                 <td>
-                                    @if ($reforma->estado=='Pendiente')
+                                    @if ($reforma->estado==\App\Reforma::REFORMA_PENDIENTE)
                                         <span class="label label-warning">Pendiente</span>
                                     @else
                                         <span class="label label-success">Aprobada</span>

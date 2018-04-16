@@ -12,25 +12,40 @@ class AreaSeeder extends Seeder
     public function run()
     {
         DB::table('areas')->insert([
-            'area'=>'DTM'
+            'area'=>'DTM',
+            'cod_area'=>'DTM'
         ]);
         DB::table('areas')->insert([
-            'area'=>'ADMINISTRATIVO'
+            'area'=>'ADMINISTRATIVO',
+            'cod_area'=>'ADM'
         ]);
         DB::table('areas')->insert([
-            'area'=>'FINANCIERO'
+            'area'=>'FINANCIERO',
+            'cod_area'=>'FIN'
         ]);
         DB::table('areas')->insert([
-            'area'=>'INFRAESTRUCTURA'
+            'area'=>'INFRAESTRUCTURA',
+            'cod_area'=>'INFR'
         ]);
         DB::table('areas')->insert([
-            'area'=>'MARKETING'
+            'area'=>'MARKETING',
+            'cod_area'=>'MARK'
         ]);
         DB::table('areas')->insert([
-            'area'=>'TH'
+            'area'=>'TALENTO HUMANO',
+            'cod_area'=>'TH'
         ]);
         DB::table('areas')->insert([
-            'area'=>'PLANIFICACION'
+            'area'=>'PLANIFICACION',
+            'cod_area'=>'PLAN'
+        ]);
+        DB::table('areas')->insert([
+            'area'=>'JURÍDICO',
+            'cod_area'=>'LEG'
+        ]);
+        DB::table('areas')->insert([
+            'area'=>'GERENCIA',
+            'cod_area'=>'GER'
         ]);
     }
 }

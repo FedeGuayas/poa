@@ -170,6 +170,11 @@
                             </a>
                         </li>
                         <li role="presentation">
+                            <a href="{{route('admin.inclusion')}}"><i class="fa fa-plus-square-o" aria-hidden="true"></i>
+                                Inclusión POA
+                            </a>
+                        </li>
+                        <li role="presentation">
                             <a href="{{route('admin.ingresos.index')}}"><i class="fa fa-usd" aria-hidden="true"></i>
                                 Ingresos Extras
                             </a>
@@ -196,6 +201,11 @@
                         @permission('planifica-pac')
                         <li role="presentation"><a href="{{route('indexPlanificacion')}}"><i class="fa fa-tasks" aria-hidden="true"></i>
                                 Planificación
+                            </a>
+                        </li>
+                        <li role="presentation">
+                            <a href="{{route('indexIncPac')}}"><i class="fa fa-plus-square-o" aria-hidden="true"></i>
+                                Inclusión PAC
                             </a>
                         </li>
                         @endpermission

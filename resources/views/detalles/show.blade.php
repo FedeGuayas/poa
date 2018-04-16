@@ -18,7 +18,8 @@
             </div>
             <div class="panel-body collapse in" id="resumen">
                 <div class="table-responsive">
-                    <table class="table table-striped table-bordered table-condensed table-hover" id="gestion_table"  cellspacing="0" style="display: none;">
+                    <table class="table table-striped table-bordered table-condensed table-hover" id="gestion_table"
+                           cellspacing="0" style="display: none;">
                         <thead>
                         <th>Código_item</th>
                         <th>Item</th>
@@ -71,14 +72,22 @@
                                 <td>{{$gestion->nota}} </td>
                                 <td>
                                     @if($gestion->estado=='Pendiente')
-                                    <a href="{{route('admin.gestion.edit',$gestion->gestion_id)}}" class="btn btn-xs btn-success tip" data-placement="top" title="Editar"><i class="fa fa-pencil" aria-hidden="true"></i>
-                                    </a>
-                                    <a href="#!" class="btn btn-xs btn-danger delete tip" data-placement="top" title="Eliminar"
-                                       data-id="{{$gestion->gestion_id}}"><i class="fa fa-trash-o"  aria-hidden="true"></i>
-                                    </a>
-                                        <a href="#!" class="btn btn-xs btn-primary devengar tip" data-placement="top" title="Devengado"
-                                           data-id="{{$gestion->gestion_id}}"><i class="fa fa-check-square-o" aria-hidden="true"></i>
+                                        <a href="{{route('admin.gestion.edit',$gestion->gestion_id)}}"
+                                           class="btn btn-xs btn-success tip" data-placement="top" title="Editar"><i
+                                                    class="fa fa-pencil" aria-hidden="true"></i>
                                         </a>
+                                        <a href="#!" class="btn btn-xs btn-danger delete tip" data-placement="top"
+                                           title="Eliminar"
+                                           data-id="{{$gestion->gestion_id}}"><i class="fa fa-trash-o"
+                                                                                 aria-hidden="true"></i>
+                                        </a>
+                                        @permission('aprueba-devengado')
+                                        <a href="#!" class="btn btn-xs btn-primary devengar tip" data-placement="top"
+                                           title="Devengado"
+                                           data-id="{{$gestion->gestion_id}}"><i class="fa fa-check-square-o"
+                                                                                 aria-hidden="true"></i>
+                                        </a>
+                                        @endpermission
                                     @endif
                                 </td>
                             </tr>
@@ -111,29 +120,29 @@
                 }
             });
 
-            var table=$("#gestion_table").DataTable({
+            var table = $("#gestion_table").DataTable({
                 lengthMenu: [[5, 10, -1], [5, 10, 'Todo']],
-                "language":{
-                    "decimal":        "",
-                    "emptyTable":     "No se encontraron datos en la tabla",
-                    "info":           "Mostrando _START_ a _END_ de _TOTAL_ registros",
-                    "infoEmpty":      "Mostrando 0 a 0 de 0 registros",
-                    "infoFiltered":   "(filtrados de un total _MAX_ registros)",
-                    "infoPostFix":    "",
-                    "thousands":      ",",
-                    "lengthMenu":     "Mostrar _MENU_ registros",
+                "language": {
+                    "decimal": "",
+                    "emptyTable": "No se encontraron datos en la tabla",
+                    "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                    "infoEmpty": "Mostrando 0 a 0 de 0 registros",
+                    "infoFiltered": "(filtrados de un total _MAX_ registros)",
+                    "infoPostFix": "",
+                    "thousands": ",",
+                    "lengthMenu": "Mostrar _MENU_ registros",
                     "loadingRecords": "Cargando...",
-                    "processing":     "Procesando...",
-                    "search":         "Buscar:",
-                    "zeroRecords":    "No se encrontraron coincidencias",
+                    "processing": "Procesando...",
+                    "search": "Buscar:",
+                    "zeroRecords": "No se encrontraron coincidencias",
                     "paginate": {
-                        "first":      "Primero",
-                        "last":       "Ultimo",
-                        "next":       "Siguiente",
-                        "previous":   "Anterior"
+                        "first": "Primero",
+                        "last": "Ultimo",
+                        "next": "Siguiente",
+                        "previous": "Anterior"
                     },
                     "aria": {
-                        "sortAscending":  ": Activar para ordenar ascendentemente",
+                        "sortAscending": ": Activar para ordenar ascendentemente",
                         "sortDescending": ": Activar para ordenar descendentemente"
                     }
                 }
@@ -142,19 +151,19 @@
             $("#gestion_table").fadeIn();
 
 
-            $('#gestion_table .search-filter').each( function () {
+            $('#gestion_table .search-filter').each(function () {
                 var title = $(this).text();
-                $(this).html( '<input type="text" style="width: 100%" placeholder="'+title+'" />' );
-            } );
+                $(this).html('<input type="text" style="width: 100%" placeholder="' + title + '" />');
+            });
 
-            table.columns().every( function () {
+            table.columns().every(function () {
                 var that = this;
-                $( 'input', this.footer() ).on( 'keyup change', function () {
-                    if ( that.search() !== this.value ) {
-                        that.search( this.value ).draw();
+                $('input', this.footer()).on('keyup change', function () {
+                    if (that.search() !== this.value) {
+                        that.search(this.value).draw();
                     }
-                } );
-            } );
+                });
+            });
 
         });
 
@@ -162,92 +171,95 @@
             $(this).tooltip();
         });
 
-        $(document).on('click','.delete',function(e){
+        $(document).on('click', '.delete', function (e) {
             e.preventDefault();
-            var row=$(this).parents('tr');
-            var id=$(this).attr('data-id');
-            var form=$("#form-delete")
-            var url=form.attr('action').replace(':ID',id);
-            var data=form.serialize();
+            var row = $(this).parents('tr');
+            var id = $(this).attr('data-id');
+            var form = $("#form-delete")
+            var url = form.attr('action').replace(':ID', id);
+            var data = form.serialize();
             swal({
-                        title: "Confirme para eliminar !",
-                        text: "Se eliminará la gestión!. Esta acción no se podrá deshacer!",
-                        type: "info",
-                        showCancelButton: true,
-                        confirmButtonColor: "#DD6B55",
-                        confirmButtonText: "SI!",
-                        cancelButtonText: " NO!",
-                        closeOnConfirm: false,
-                        closeOnCancel: false,
-                        showLoaderOnConfirm: true,
-                    },
-                    function (isConfirm) {
-                        if (isConfirm) {
-                            $.ajax({
-                                url:url,
-                                data:data,
-                                type: 'POST',
-                                success: function (response) {
-                                    swal("Confirmado!", response.message,"success");
-                                    row.fadeOut();
-                                },
-                                error: function (response) {
-                                    row.show();
-                                    swal("ERROR!", response,"error");
-                                }
-                            });
-                        }//isConfirm
-                        else {
-                            swal("Cancelado", "Canceló la acción :)", "error");
-                        }
-                    });
+                    title: "Confirme para eliminar !",
+                    text: "Se eliminará la gestión!. Esta acción no se podrá deshacer!",
+                    type: "info",
+                    showCancelButton: true,
+                    confirmButtonColor: "#DD6B55",
+                    confirmButtonText: "SI!",
+                    cancelButtonText: " NO!",
+                    closeOnConfirm: false,
+                    closeOnCancel: false,
+                    showLoaderOnConfirm: true,
+                },
+                function (isConfirm) {
+                    if (isConfirm) {
+                        $.ajax({
+                            url: url,
+                            data: data,
+                            type: 'POST',
+                            success: function (response) {
+                                swal("Confirmado!", response.message, "success");
+                                row.fadeOut();
+                            },
+                            error: function (response) {
+                                row.show();
+                                swal("ERROR!", response, "error");
+                            }
+                        });
+                    }//isConfirm
+                    else {
+                        swal("Cancelado", "Canceló la acción :)", "error");
+                    }
+                });
         });
 
 
-        $(document).on('click','.devengar',function(e){
+        $(document).on('click', '.devengar', function (e) {
             e.preventDefault();
-            var row=$(this).parents('tr');
-            var id=$(this).attr('data-id');
-            var form=$("#form-devengado")
-            var url=form.attr('action').replace(':ID',id);
-            var data=form.serialize();
+            var row = $(this).parents('tr');
+            var id = $(this).attr('data-id');
+            var form = $("#form-devengado")
+            var url = form.attr('action').replace(':ID', id);
+            var data = form.serialize();
             swal({
-                        title: "Devengar Importe !",
-                        text: "El importe del proceso actual pasara de estado ejecutado a devengado!",
-                        type: "info",
-                        showCancelButton: true,
-                        confirmButtonColor: "#DD6B55",
-                        confirmButtonText: "SI!",
-                        cancelButtonText: " NO!",
-                        closeOnConfirm: false,
-                        closeOnCancel: false,
-                        showLoaderOnConfirm: true
-                    },
-                    function (isConfirm) {
-                        if (isConfirm) {
-                            $.ajax({
-                                url:url,
-                                data:data,
-                                type: 'GET',
-                                success: function (response) {
-                                    if (response.tipo == 'error') {
-                                        swal("ERROR!",response.message,"error");
-                                    } else {
-                                        swal("", response.message, "success");
-                                    }
-                                    $(".sa-confirm-button-container .confirm").on('click', function () {
-                                        window.setTimeout(function () {location.reload()}, 1)});
-
-                                },
-                                error: function (response) {
-                                    swal("ERROR!", response,"error");
+                    title: "Devengar Importe !",
+                    text: "El importe del proceso actual pasara de estado ejecutado a devengado!",
+                    type: "info",
+                    showCancelButton: true,
+                    confirmButtonColor: "#DD6B55",
+                    confirmButtonText: "SI!",
+                    cancelButtonText: " NO!",
+                    closeOnConfirm: false,
+                    closeOnCancel: false,
+                    showLoaderOnConfirm: true
+                },
+                function (isConfirm) {
+                    if (isConfirm) {
+                        $.ajax({
+                            url: url,
+                            data: data,
+                            type: 'GET',
+                            success: function (response) {
+                                if (response.tipo == 'error') {
+                                    swal("ERROR!", response.message, "error");
+                                } else {
+                                    swal("", response.message, "success");
                                 }
-                            });
-                        }//isConfirm
-                        else {
-                            swal("Cancelado", "Canceló la acción :)", "error");
-                        }
-                    });
+                                $(".sa-confirm-button-container .confirm").on('click', function () {
+                                    window.setTimeout(function () {
+                                        location.reload()
+                                    }, 1)
+                                });
+
+                            },
+                            error: function (response) {
+                                swal("ERROR!", response, "error");
+                            }
+                        });
+                    }//isConfirm
+                    else {
+                        swal("Cancelado", "Canceló la acción :)", "error");
+                    }
+                });
         });
 
     </script>

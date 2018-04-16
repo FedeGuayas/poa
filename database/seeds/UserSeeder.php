@@ -18,7 +18,8 @@ class UserSeeder extends Seeder
             'apellidos'=>'admin',
             'email'=>'admin@mail.com',
             'num_doc'=>'9999999999',
-            'cargo'=>'ADMIN'
+            'cargo'=>'ADMIN',
+            'tratamiento'=>'Sr'
         ]);
         DB::table('users')->insert([
             'worker_id'=>1,

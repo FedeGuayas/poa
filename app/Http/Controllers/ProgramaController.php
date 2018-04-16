@@ -131,7 +131,6 @@ class ProgramaController extends Controller
             }
         }
 
-
     }
 
     /**
@@ -166,20 +165,31 @@ class ProgramaController extends Controller
      * @param Request $request
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\Http\JsonResponse|\Illuminate\View\View
      */
-    public function asociarActividades(Request $request)
+    public function asociarActividades(Request $request,$programa_id)
     {
         try {
             DB::beginTransaction();
-            $programa = Programa::where('id', $request->input('program_id'))->first();
+            $programa = Programa::where('id', $programa_id)->first();
             $actividades = $request->input('actividads');
 
+            $pivotData=[];
             if (count($actividades) > 0) {
-                $programa->actividads()->sync($actividades);
+                $cont = 0;
+                while ($cont < count($actividades)) {
+                    $actividad=Actividad::where('id',$actividades[$cont])->first();
+                    $pivotData []= [
+                        'cod_actividad' => $actividad->cod_actividad,
+                        'cod_programa'=>$programa->cod_programa
+                    ];
+                    $cont++;
+                }
+                $syncData  = array_combine($actividades, $pivotData);
+                $programa->actividads()->sync($syncData);
             } else $programa->actividads()->detach();
 
-
             DB::commit();
-            $mensaje = "Actividades actualizadas";
+
+            $mensaje = "Actividades asociadas";
             if ($request->ajax()) {
                 return response()->json([
                     "message" => $mensaje,
@@ -188,7 +198,6 @@ class ProgramaController extends Controller
             }
 
         } catch (\Exception $e) {
-
             DB::rollback();
             $message = "Error al sincronizar las actividades y los programas en la BBDD";
             if ($request->ajax()) {

@@ -1,5 +1,5 @@
 {!! Form::model($programa,['route'=>['asociarActividades', $programa->id], 'method'=>'post','id'=>'form-vincular']) !!}
-{!! Form::hidden('program_id',$programa->id,['id'=>'pro_id']) !!}
+{!! Form::hidden('programa_id',$programa->id,['id'=>'pro_id']) !!}
     <div class="row">
         <div class="form-inline col-xs-12">
             <div class="form-group">
@@ -12,7 +12,6 @@
             </div>
         </div>
     </div>
-
 
 <hr>
 <table class="table table-striped table-bordered table-condensed table-hover highlight responsive-table" id="table_actividades">

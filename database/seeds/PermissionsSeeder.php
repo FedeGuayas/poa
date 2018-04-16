@@ -126,6 +126,15 @@ class PermissionsSeeder extends Seeder
             'display_name'=>'CIERRE MENSUAL',
             'description'=>'REALIZA EL CIERRE MENSUAL PARA HISTORICO',
         ]);
-
+        DB::table('permissions')->insert([
+            'name'=>'certificacion-pac',
+            'display_name'=>'CERTIFICACION PAC (CPAC)',
+            'description'=>'USUARIO CON LOS PERMISOS PARA GENERAR Y SUBIR LA CPAC',
+        ]);
+        DB::table('permissions')->insert([
+            'name'=>'sr-pac',
+            'display_name'=>'SRPAC',
+            'description'=>'PERMISOS PARA LA SOLICITUD DE REFORMA PAC',
+        ]);
     }
 }

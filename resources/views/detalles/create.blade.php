@@ -19,16 +19,6 @@
         <div class="col-md-2 col-sm-6">
             <h4>Disponible: <span class="label label-warning">$ {{$pac->disponible}}</span></h4>
         </div>
-        <div class="col-md-2 col-sm-6">
-            <a href="#permitReform" data-toggle="modal"
-               class="btn btn-xs btn-danger tip" data-placement="top"
-               title="Monto no utilizado, para reformar" target="_blank">
-                <i class="fa fa-recycle" aria-hidden="true"></i> A Reformar
-            </a>
-            {{--<a href="{{route('pac.permitReform',$pac->id)}}">--}}
-{{--                {!! Form::button('<i class="fa fa-recycle" aria-hidden="true"></i> A Reformar',['class'=>'btn btn-sm btn-danger tip','data-placement'=>'top', 'title'=>'Monto no utilizado, para reformar']) !!}--}}
-            {{--</a>--}}
-        </div>
     </div>
 
     <div class="row">
@@ -47,7 +37,7 @@
             </div>
             <div class="col-lg-3">
                 <div class="form-group">
-                    {!! Form::label('num_factura','Número de Factura:') !!} <span class="text-danger fa-lg">*</span>
+                    {!! Form::label('num_factura','Número de Factura o Cotización:') !!} <span class="text-danger fa-lg">*</span>
                     {!! Form::text('num_factura',null,['class'=>'form-control','placeholder'=>'Numero de la factura...','style'=>'text-transform:uppercase','required']) !!}
                 </div>
             </div>
@@ -55,7 +45,7 @@
         <div class="col-lg-10">
             <div class="col-lg-3">
                 <div class="form-group">
-                    {!! Form::label('fecha_factura','Fecha de la Factura:') !!} <span class="text-danger fa-lg">*</span>
+                    {!! Form::label('fecha_factura','Fecha de la Factura o Cotización:') !!} <span class="text-danger fa-lg">*</span>
                     <div class='input-group' id="fecha_factura_datepicker">
                         {!! Form::text('fecha_factura',null,['class'=>'form-control','style'=>'text-transform:uppercase','onkeydown'=>'return false','required']) !!}
                         <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
@@ -64,7 +54,7 @@
             </div>
             <div class="col-lg-3">
                 <div class="form-group">
-                    {!! Form::label('fecha_entrega','Fecha de entrega:') !!}
+                    {!! Form::label('fecha_entrega','Fecha de entrega de Factura:') !!}
                     <div class='input-group' id="fecha_entrega_datepicker">
                     {!! Form::text('fecha_entrega',null,['class'=>'form-control','style'=>'text-transform:uppercase','onkeydown'=>'return false']) !!}
                         <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
@@ -73,7 +63,7 @@
             </div>
             <div class="col-lg-3">
                 <div class="form-group">
-                    {!! Form::label('importe','Ejecutado:') !!} <span class="text-danger fa-lg">*</span>
+                    {!! Form::label('importe','Monto:') !!} <span class="text-danger fa-lg">*</span>
                     <div class="input-group has-success">
                         <span class="input-group-addon"><i class="fa fa-dollar text-warning"></i></span>
                         {!! Form::number('importe',null,['class'=>'form-control tip','data-placement'=>'top','title'=>'Devengado','placeholder'=>'0.00','id'=>'importe','step' => '0.01','min' => '0','required']) !!}
@@ -103,7 +93,6 @@
 
 
     {!! Form::close() !!}
-@include('pac.permit-reform-modal')
 @endsection
 
 @section('scripts')

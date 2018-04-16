@@ -23,26 +23,20 @@ class PoaController extends Controller
     }
 
     /**
-     * Display a listing of the resource.
+     * Vista que muestra los presupuestos por areas
      *
      * @return \Illuminate\Http\Response
      */
     public function index(Request $request)
     {
         if (Auth::user()->can('planifica-pac')) {
-            $programas = Programa::select(DB::raw('concat (cod_programa," - ",programa) as programa,id'))->get();
-            $list_programs = $programas->pluck('programa', 'id');
+//            $programas = Programa::select(DB::raw('concat (cod_programa," - ",programa) as programa,id'))->get();
+//            $list_programs = $programas->pluck('programa', 'id');
 
             $areas = Area::all();
             $list_areas = $areas->pluck('area', 'id');
             $area_select = $request->input('area');
             $area = Area::where('id', $area_select)->first();
-
-            $area_id = $request->input('area');
-            $item_id = $request->input('item');
-            $area_item2 = DB::table('area_item')->where('area_id', $area_id)
-//            ->where('item_id', $item_id)
-                ->get();
 
             $area_item = DB::table('area_item as ai')
                 ->join('items as i', 'ai.item_id', '=', 'i.id')
@@ -57,7 +51,7 @@ class PoaController extends Controller
             foreach ($area_item as $ai) {
                 $total = $total + $ai->monto;
             }
-            return view('poafdg.index', compact('area_item', 'total', 'list_programs', 'list_areas', 'area_select', 'area'));
+            return view('poafdg.index', compact('area_item', 'total', 'list_areas', 'area_select', 'area'));
         } else return abort(403);
     }
 
@@ -133,8 +127,7 @@ class PoaController extends Controller
      * @param  int $id
      * @return \Illuminate\Http\Response
      */
-    public
-    function destroy(Request $request, $id)
+    public function destroy(Request $request, $id)
     {
         $poafdg = AreaItem::findOrFail($id);
         $monto = $poafdg->monto;
@@ -161,8 +154,7 @@ class PoaController extends Controller
      * @param Request $request
      * @return mixed
      */
-    public
-    function poaFDG(Request $request)
+    public function poaFDG(Request $request)
     {
 
         $programas = Programa::select(DB::raw('concat (cod_programa," - ",programa) as programa,id'))->get();
@@ -187,11 +179,11 @@ class PoaController extends Controller
 
     }
 
+
     /**
      * Programacion del Poa de FDG cargar item al seleccionar la actividad, select dinamico
      */
-    public
-    function getItem(Request $request)
+    public function getItem(Request $request)
     {
 
         if ($request->ajax()) {
@@ -211,8 +203,7 @@ class PoaController extends Controller
      * @param Request $request
      * @return mixed
      */
-    public
-    function getUniqueItem(Request $request)
+    public function getUniqueItem(Request $request)
     {
         $item_id = $request->input('item_id');
         $item = Item::with('extras', 'areas')->where('id', $item_id)->first();

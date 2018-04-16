@@ -6,6 +6,7 @@ use Illuminate\Database\Migrations\Migration;
 class CreateEsigefsTable extends Migration
 {
     /**
+     * Historicos
      * Run the migrations.
      *
      * @return void

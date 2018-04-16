@@ -73,14 +73,8 @@
 
 
             <div class="col-sm-6 col-md-4 col-lg-6">
-
-
                 <canvas id="myChart"></canvas>
             </div>
-
-
-
-
 
     </div>
 
@@ -112,8 +106,8 @@
                 ]
             }, {
                 label: '% No ejecutado',
-                backgroundColor:  'rgba(255, 99, 132, 1)',
-                borderColor: 'rgba(255, 99, 132, 1)',
+                backgroundColor:  'rgba(228, 31, 31, 1)',
+                borderColor: 'rgba(187, 21, 21, 1)',
                 data: [
                     @foreach($resumenArray as $areas)
                         "{{$areas['no_eje']}}",
@@ -121,6 +115,11 @@
                 ]
             }]
 
+        };
+
+        // This is the important part
+        var options = {
+            pointLabelFontSize : 2
         };
 
         var myChart = new Chart(ctx, {
@@ -139,15 +138,17 @@
                     xAxes: [{
                         gridLines: {
                             offsetGridLines: true
+                        },
+                        ticks: {
+                            fontSize:9
                         }
                     }]
                 },
                 responsiveAnimationDuration: 1000,
                 title: {
                     display: true,
-                    text: 'EJECUCION POA FEDEGUAYAS'
+                    text: 'EJECUCION POA FEDEGUAYAS. "{{$month ? $month->month: ''}}"'
                 }
-
             }
         });
     </script>

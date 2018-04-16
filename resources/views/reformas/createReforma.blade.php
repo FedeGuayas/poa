@@ -9,6 +9,7 @@
         <div class="row">
             <div class="col-sm-6">
                 @include('alert.alert')
+                @include('alert.request')
                 @include('alert.alert_json')
             </div>
         </div>
@@ -22,20 +23,37 @@
             <div class="panel-body collapse in" id="poa_origen">
                 {!! Form::open(['route'=>'admin.reformas.store','method'=>'post','id'=>'form-enviar_origen']) !!}
                 {!! Form::hidden('area_item_origen',$codigos->id,['id'=>'area_item_origen']) !!}
+                {!! Form::hidden('reform_type_id',$reform_type_id,['id'=>'reform_type_id']) !!}
+
+                @if ($tipo_reforma!='INTERNA')
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <i class="fa fa-pencil"></i>
+                                {!! Form::label('informe','Justificativo origen:') !!}
+                                {!! Form::textarea('informe',null,['class'=>'form-control','placeholder'=>'Justificación origen para el informe técnico...','rows'=>'2','autofocus','required','maxlength'=>'230']) !!}
+                                <small id="notaHelpBlock" class="form-text text-muted">
+                                    Ejemplo Justificativo origen: Se cancelaron los viajes planificados para el mes de enero ...
+                                </small>
+                            </div>
+                        </div>
+                        <div class="col-lg-1 has-success">Programa:
+                            <input type="text" class="form-control input-sm" disabled value="{{$codigos->cod_programa}}"
+                                   style="width: 100%; text-align: center" id="cod_programa_origen">
+                        </div>
+                        <div class="col-lg-1 has-success">Actividad:
+                            <input type="text" class="form-control input-sm" disabled value="{{$codigos->cod_actividad}}"
+                                   style="width: 100%; text-align: center" id="cod_actividad_origen">
+                        </div>
+                        <div class="col-lg-1 has-success">Cod_Item:
+                            <input type="text" class="form-control input-sm" disabled value="{{$codigos->cod_item}}"
+                                   style="width: 100%; text-align: center" id="cod_item_orig">
+                        </div>
+                    </div>
+                @endif
+
                 <div class="row">
-                    <div class="col-lg-1 has-success">Programa:
-                        <input type="text" class="form-control input-sm" disabled value="{{$codigos->cod_programa}}"
-                               style="width: 100%; text-align: center" id="cod_programa_origen">
-                    </div>
-                    <div class="col-lg-1 has-success">Actividad:
-                        <input type="text" class="form-control input-sm" disabled value="{{$codigos->cod_actividad}}"
-                               style="width: 100%; text-align: center" id="cod_actividad_origen">
-                    </div>
-                    <div class="col-lg-1 has-success">Cod_Item:
-                        <input type="text" class="form-control input-sm" disabled value="{{$codigos->cod_item}}"
-                               style="width: 100%; text-align: center" id="cod_item_orig">
-                    </div>
-                    <div class="col-lg-6 has-success">Item:
+                    <div class="col-lg-5 has-success">Item:
                         <input type="text" class="form-control input-sm" disabled value="{{$codigos->item}}"
                                style="width: 100%; text-align: center" id="cod_item">
                     </div>
@@ -43,23 +61,14 @@
                         <div class="col-lg-2">Disponible:
                             <div class="input-group has-warning">
                                 <span class="input-group-addon"><i class="fa fa-dollar text-warning"></i></span>
+                                {{--liberado--}}
                                 {!! Form::number('disponible',$poa_disponible,['class'=>'form-control tip','data-placement'=>'top','title'=>'A distribuir','placeholder'=>'0.00','id'=>'disponible','readonly']) !!}
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="row">
-                    <div class="10">
-                        <div class="col-lg-2">
-                            {!! Form::label('tipo','Tipo de Reforma') !!} <span class="text-danger fa-lg">*</span>
-                            {!! Form::select('tipo',['INTERNA'=>'INTERNA','INFORMATIVA'=>'INFORMATIVA','MINISTERIAL'=>'MINISTERIAL'],null,['class'=>'form-control','placeholder'=>'Seleccione ...','id'=>'tipo']) !!}
-                        </div>
-                        <div class="col-lg-4">
-                            <div class="form-group">
-                                <i class="fa fa-pencil"></i>
-                                {!! Form::label('nota','Observaciones:') !!}
-                                {!! Form::textarea('nota',null,['class'=>'form-control','length'=>'255','style'=>'text-transform:uppercase','placeholder'=>'Observaciones...','rows'=>'3', 'cols'=>'50']) !!}
-                            </div>
+                    <div class="form-group">
+                        <div class="col-lg-2 has-error">
+                            {!! Form::number('resto',null,['class'=>'form-control input-sm tip','data-placement'=>'top','title'=>'Por distribuir','placeholder'=>'0.00','id'=>'resto','readonly']) !!}
                         </div>
                     </div>
                 </div>
@@ -68,7 +77,7 @@
 
                 <div class="table-responsive">
                     <table class="table table-striped table-bordered table-condensed table-hover" id="pac_table"
-                           cellspacing="0" style="display: none;">
+                           cellspacing="0" style="display: none; font-size: 10px;">
                         <caption>PACS-ORIGEN</caption>
                         <thead style="background-color: rgba(236, 198, 77, 0.33);">
                         <th style="width: 100px;">Cod_item</th>
@@ -77,10 +86,7 @@
                         <th style="width: 50px;">Mes</th>
                         <th>Concepto</th>
                         <th style="width: auto;">Responsable</th>
-                        <th style="width: 100px;">Presupuesto</th>
-                        <th style="width: 100px;">Ejecutado</th>
-                        <th style="width: 100px;">Devengado</th>
-                        <th style="width: 100px;">Disponible</th>
+                        <th style="width: 100px;">Liberado</th>
                         <th style="width: 5px;">Acción</th>
                         </thead>
                         <tfoot>
@@ -93,31 +99,26 @@
                             <th></th>
                             <th></th>
                             <th></th>
-                            <th></th>
-                            <th></th>
-                            <th></th>
                         </tr>
                         </tfoot>
                         <tbody>
                         @if (count($pacs)>0)
-                        @foreach($pacs as $pac)
-                            <tr>
-                                <td>{{$pac->cod_programa.'-'.$pac->cod_actividad.'-'.$pac->cod_item}}</td>
-                                <td>{{$pac->item}}</td>
-                                <td>{{$pac->area}}</td>
-                                <td>{{$pac->mes}}</td>
-                                <td>{{$pac->concepto}}</td>
-                                <td>{{$pac->nombres.' '.$pac->apellidos}}</td>
-                                <td>$ {{$pac->presupuesto}}</td>
-                                <td>$ {{$pac->comprometido}} </td>
-                                <td>$ {{$pac->devengado}}</td>
-                                <td class="no_ejecutado">$ <input type="number" readonly value="{{$pac->disponible}}"
-                                                                  style="border: none; width: 100px"></td>
-                                <td>
-                                    {!! Form::button('<i class="fa fa-minus" aria-hidden="true"></i>',['class'=>'btn btn-xs btn-warning tip agregar','data-placement'=>'top', 'title'=>'Agregar al destino Reforma','data-id'=>"{$pac->id}"]) !!}
-                                </td>
-                            </tr>
-                        @endforeach
+                            @foreach($pacs as $pac)
+                                <tr>
+                                    <td>{{$pac->cod_programa.'-'.$pac->cod_actividad.'-'.$pac->cod_item}}</td>
+                                    <td>{{$pac->item}}</td>
+                                    <td>{{$pac->area}}</td>
+                                    <td>{{$pac->mes}}</td>
+                                    <td>{{$pac->concepto}}</td>
+                                    <td>{{$pac->nombres.' '.$pac->apellidos}}</td>
+                                    <td class="no_ejecutado">$ <input type="number" readonly value="{{$pac->liberado}}"
+                                                                      style="border: none; width: 100px">
+                                    </td>
+                                    <td>
+                                        {!! Form::button('<i class="fa fa-minus" aria-hidden="true"></i>',['class'=>'btn btn-xs btn-warning tip agregar','data-placement'=>'top', 'title'=>'Agregar al destino de la Reforma','data-id'=>"{$pac->id}"]) !!}
+                                    </td>
+                                </tr>
+                            @endforeach
                         @endif
                         </tbody>
                     </table>
@@ -127,15 +128,17 @@
                     <div class="col-lg-8 col-lg-offset-2">
                         <table id="origen" class="table table-striped table-condensed table-bordered table-hover">
                             <thead style="background-color: rgba(236, 198, 77, 0.33);">
-                            <th style="width: 5px;">Accion</th>
-                            <th>Item</th>
-                            <th style="width: 250px;">Valor</th>
+                            <tr>
+                                <th style="width: 5px;">Accion</th>
+                                <th>Item</th>
+                                <th style="width: 250px;">Valor</th>
+                            </tr>
                             </thead>
                             <tfoot>
                             <th>Total</th>
                             <th></th>
-                            {{--<th><b><h5 id="total_origen">$ 0.00</h5></b></th>--}}
                             <th>
+                                {{--<h4 id="total_origen">$ 0.00</h4>--}}
                                 ${!! Form::number('total_origen',null,['placeholder'=>'0.00','id'=>'total_origen','readonly','style'=>'border: none; width:95%;']) !!}
                             </th>
                             </tfoot>
@@ -191,7 +194,6 @@
         });
 
 
-
         $(document).ready(function () {
             var table = $("#pac_table").DataTable({
                 lengthMenu: [[5, 10, -1], [5, 10, 'Todo']],
@@ -243,70 +245,82 @@
 
         // ************   LLENAR TABLA PARA ORIGEN DE REFORMA  **********************//
         $(document).on('click', '.agregar', function (event) {
-            var id = $(this).attr('data-id');//id pac
-            var row = $(this).parents('tr');
-            var max = parseFloat(row.find('.no_ejecutado').find('input').val());
-            var item = row.find("td").eq(1).html();
-            var tipo = $("#tipo").val();
-            if  (tipo ==""){
-                swal("","Debe seleccionar el tipo de reforma","error");
-            }else{
-                swal({
-                            title: "Monto!",
-                            text: "Valor a obtener para reforma:",
-                            type: "input",
-                            inputType: "number",
-                            showCancelButton: true,
-                            closeOnConfirm: false,
-                            animation: "slide-from-top",
-                            inputPlaceholder: max
-                        },
-                        function (inputValue) {
+            var id = $(this).attr('data-id');//id pac tomado del boton
+            var row = $(this).parents('tr'); //fila
+//            var max = parseFloat(row.find('.no_ejecutado').find('input').val());//max valor del input en la fila con la clase no_ejecutado
+            var max = parseFloat(row.find('td>input').val());//max valor del input en la fila con la clase no_ejecutado
+            var item = row.find("td").eq(1).html(); //nombe del item
+            swal({
+                    title: "Monto!",
+                    text: "Valor a obtener para reforma:",
+                    type: "input",
+                    inputType: "number",
+                    showCancelButton: true,
+                    closeOnConfirm: false,
+                    animation: "slide-from-top",
+                    inputPlaceholder: max
+                }, function (inputValue) {
 
-                            if (inputValue > max) {
-                                swal.showInputError("No puede restar un valor superior al disponible !");
-                                return false;
-                            }
-                            if (inputValue === "") {
-                                swal.showInputError("Necestita escribir algo!");
-                                return false;
-                            }
+                    if (inputValue===false) {//si se da en cancel
+                        console.log("cancelo");
+                        return false;
+                    } else { //acepto
+                        if (inputValue > max) {
+                            swal.showInputError("No puede tomar un valor superior al disponible !");
+                            return false;
+                        }
+                        if (inputValue === "" || inputValue === "0") {
+                            swal.showInputError("Es obligatorio entrar datos!");
+                            return false;
+                        }
+                        agregar_reforma_origen(inputValue, row, id, item);
+                    }
 
-                            agregar_reforma_origen(inputValue, row, id, item);
-
-                        });
-            }
+                });
 
         });
 
-        var cont = 0, tot = 0, subtotal = []; ids_origen = [];
+        var cont = 0, tot = 0, resto = 0, subtotal = [];
+        ids_origen = [];
         function agregar_reforma_origen(inputValue, row, id, item) {
-            if (inputValue === '') {
+
+            if (inputValue === '' || inputValue === "0") {
                 return false;
             }
             var pac_id = id;
+            var valor = parseFloat(inputValue);
             var disponible = parseFloat($("#disponible").val());
             var origen = $("#origen");
-            subtotal[cont] = parseFloat(inputValue);
-            tot = tot + subtotal[cont];
+
+            subtotal[cont] = valor;
+            tot = Math.round((tot + subtotal[cont]) * 100) / 100;
             if (tot <= disponible) {
                 var fila = '<tr class="selected" id="fila' + cont + '"><td><button class="btn btn-sm btn-danger" title="Eliminar" onclick="eliminar(' + cont + ');"><i class="fa fa-trash-o" aria-hidden="true"></i><input type="hidden" name="pac_id[]" value="' + pac_id + '"></button></td><td>' + item + '</td><td style="color: #5cb85c"><input type="hidden" name="subtotal_id[]" value="' + subtotal[cont] + '"><b>$ ' + subtotal[cont].toFixed(2) + '</b></td></tr>';
                 origen.append(fila);
-                $("#total_origen").val(tot.toFixed(2));
-                cont++;
                 evaluar_enviar_origen();
+                $("#total_origen").val(tot);
+//                $("#total_origen").html("$ " + tot.toFixed(2));
+                resto = Math.round((disponible - tot) * 100) / 100;
+                $("#resto").val(resto);
+                cont++;
                 swal("Origen!", "Valor agregado : $" + inputValue, "success");
                 row.find('.agregar').prop('disabled', true);
             } else {
-                tot = tot - subtotal[cont];
-                $("#total_origen").val(tot.toFixed(2));
+                tot = Math.round((tot - subtotal[cont]) * 100) / 100;
+                $("#total_origen").val(tot);
+                $("#resto").val(resto);
+//                $("#total").html("$ " + tot.toFixed(2));
                 swal("Error! :(", "No puede superar el monto disponible!", "error")
             }
         }
+
         function eliminar(index) {
-            tot = tot - subtotal[index];
-            $("#total_origen").val(tot.toFixed(2));
+            tot = Math.round((tot - subtotal[index]) * 100) / 100;
+            resto = Math.round((resto + subtotal[index]) * 100) / 100;
+//            $("#total_origen").html("$ " + tot.toFixed(2));
+            $("#resto").val(resto);
             $("#fila" + index).remove();
+            $("#total_origen").val(tot);
             evaluar_enviar_origen()
         }
         function evaluar_enviar_origen() {
@@ -336,8 +350,6 @@
             $("#msj-ok").html(message);
             $("#message-success").fadeIn();
         }
-
-
 
 
     </script>

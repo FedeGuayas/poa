@@ -96,6 +96,12 @@
                                 {!! Form::textarea('concepto',null,['class'=>'form-control','placeholder'=>'Descripción del proceso...','rows'=>'3','style'=>'text-transform:uppercase','id'=>'concepto','required']) !!}
                             </div>
                         </div>
+                        <div class="col-lg-6">
+                            <div class="form-group">
+                                {!! Form::checkbox('proceso_pac',null,true,['id'=>'proceso_pac']) !!}
+                                {!! Form::label('proceso_pac','Seleccione si es un proceso PAC') !!}
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -117,8 +123,20 @@
                 </div>
                 <div class="panel-body collapse in" id="resumen">
 
-                        <table class="table table-striped table-bordered table-condensed table-hover table-responsive" id="pac_table"  cellspacing="0" width="100%" style="display: none;">
-                            <thead class="bg-info">
+                    <table class="table table-striped table-bordered table-condensed table-hover table-responsive"
+                           id="pac_table" cellspacing="0" width="100%" style="display: none;">
+                        <thead class="bg-info">
+                        <th>Cod_item</th>
+                        <th>Presupuesto</th>
+                        <th>Devengado</th>
+                        <th>Disponible</th>
+                        <th>Mes</th>
+                        <th>Responsable</th>
+                        <th>Procedimiento</th>
+                        <th>Concepto</th>
+                        </thead>
+                        <tfoot>
+                        <tr>
                             <th>Cod_item</th>
                             <th>Presupuesto</th>
                             <th>Devengado</th>
@@ -127,34 +145,23 @@
                             <th>Responsable</th>
                             <th>Procedimiento</th>
                             <th>Concepto</th>
-                            </thead>
-                            <tfoot>
+                        </tr>
+                        </tfoot>
+                        <tbody>
+                        @foreach($pacs as $pac)
                             <tr>
-                                <th>Cod_item</th>
-                                <th>Presupuesto</th>
-                                <th>Devengado</th>
-                                <th>Disponible</th>
-                                <th>Mes</th>
-                                <th>Responsable</th>
-                                <th>Procedimiento</th>
-                                <th>Concepto</th>
+                                <td>{{$pac->cod_item}}</td>
+                                <td>{{$pac->presupuesto}}</td>
+                                <td>{{$pac->devengado}}</td>
+                                <td>{{$pac->disponible}}</td>
+                                <td>{{$pac->mes}}</td>
+                                <td>{{$pac->nombres}} {{$pac->apellidos}}</td>
+                                <td>{{$pac->procedimiento}}</td>
+                                <td>{{$pac->concepto}}</td>
                             </tr>
-                            </tfoot>
-                            <tbody>
-                            @foreach($pacs as $pac)
-                                <tr>
-                                    <td>{{$pac->cod_item}}</td>
-                                    <td>{{$pac->presupuesto}}</td>
-                                    <td>{{$pac->devengado}}</td>
-                                    <td>{{$pac->disponible}}</td>
-                                    <td>{{$pac->mes}}</td>
-                                    <td>{{$pac->nombres}} {{$pac->apellidos}}</td>
-                                    <td>{{$pac->procedimiento}}</td>
-                                    <td>{{$pac->concepto}}</td>
-                                </tr>
-                            @endforeach
-                            </tbody>
-                        </table>
+                        @endforeach
+                        </tbody>
+                    </table>
 
                 </div>
             </div>{{--./panel-success--}}
@@ -169,17 +176,19 @@
 @section('scripts')
 
     <script>
-        $( "form" ).submit('',function( event ) {
+
+        $("form").submit('', function (event) {
             event.preventDefault();
+            $("#guardar").prop("disabled", true);
             var form = $(this);
-            var valor=parseFloat($("#valor").val());
-            var disp=parseFloat($("#total_disponible").val());
-            var  resto=(disp-valor).toFixed(2);
-            if (resto > 0 ){
+            var valor = parseFloat($("#valor").val());
+            var disp = parseFloat($("#total_disponible").val());
+            var resto = (disp - valor).toFixed(2);
+            if (resto > 0) {
                 event.preventDefault();
                 swal({
                     title: "Guardar proceso?",
-                    text: 'Existe disponibilidad de ($ '+resto+'), seguro quiere guardar el proceso?',
+                    text: 'Existe disponibilidad de ($ ' + resto + '), seguro quiere guardar el proceso?',
                     type: "warning",
                     showCancelButton: true,
                     confirmButtonColor: "#6A9944",
@@ -193,10 +202,10 @@
                         //acciones o funciones al dar en cancelar
                     }
                 });
-            }else  if (valor>disp){
+            } else if (valor > disp) {
                 event.preventDefault();
                 swal("Error!", "No puede superar el valor disponible!", "error")
-            }else{
+            } else {
                 event.currentTarget.submit();
             }
 
@@ -223,29 +232,29 @@
         });
 
         $(document).ready(function () {
-            var table=$("#pac_table").DataTable({
+            var table = $("#pac_table").DataTable({
                 lengthMenu: [[5, 10, -1], [5, 10, 'Todo']],
-                "language":{
-                    "decimal":        "",
-                    "emptyTable":     "No se encontraron datos en la tabla",
-                    "info":           "Mostrando _START_ a _END_ de _TOTAL_ registros",
-                    "infoEmpty":      "Mostrando 0 a 0 de 0 registros",
-                    "infoFiltered":   "(filtrados de un total _MAX_ registros)",
-                    "infoPostFix":    "",
-                    "thousands":      ",",
-                    "lengthMenu":     "Mostrar _MENU_ registros",
+                "language": {
+                    "decimal": "",
+                    "emptyTable": "No se encontraron datos en la tabla",
+                    "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                    "infoEmpty": "Mostrando 0 a 0 de 0 registros",
+                    "infoFiltered": "(filtrados de un total _MAX_ registros)",
+                    "infoPostFix": "",
+                    "thousands": ",",
+                    "lengthMenu": "Mostrar _MENU_ registros",
                     "loadingRecords": "Cargando...",
-                    "processing":     "Procesando...",
-                    "search":         "Buscar:",
-                    "zeroRecords":    "No se encrontraron coincidencias",
+                    "processing": "Procesando...",
+                    "search": "Buscar:",
+                    "zeroRecords": "No se encrontraron coincidencias",
                     "paginate": {
-                        "first":      "Primero",
-                        "last":       "Ultimo",
-                        "next":       "Siguiente",
-                        "previous":   "Anterior"
+                        "first": "Primero",
+                        "last": "Ultimo",
+                        "next": "Siguiente",
+                        "previous": "Anterior"
                     },
                     "aria": {
-                        "sortAscending":  ": Activar para ordenar ascendentemente",
+                        "sortAscending": ": Activar para ordenar ascendentemente",
                         "sortDescending": ": Activar para ordenar descendentemente"
                     }
                 }
@@ -254,19 +263,19 @@
             $("#pac_table").fadeIn();
 
 
-            $('#pac_table .search-filter').each( function () {
+            $('#pac_table .search-filter').each(function () {
                 var title = $(this).text();
-                $(this).html( '<input type="text" placeholder="'+title+'" />' );
-            } );
+                $(this).html('<input type="text" placeholder="' + title + '" />');
+            });
 
-            table.columns().every( function () {
+            table.columns().every(function () {
                 var that = this;
-                $( 'input', this.footer() ).on( 'keyup change', function () {
-                    if ( that.search() !== this.value ) {
-                        that.search( this.value ).draw();
+                $('input', this.footer()).on('keyup change', function () {
+                    if (that.search() !== this.value) {
+                        that.search(this.value).draw();
                     }
-                } );
-            } );
+                });
+            });
 
         });
     </script>

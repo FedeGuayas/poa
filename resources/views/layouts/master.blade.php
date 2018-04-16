@@ -3,6 +3,7 @@
 @section('styles')
     {{--<link rel="stylesheet" href="{{asset('plugins/datatables/media/css/dataTables.bootstrap.css')}}">--}}
 {{--    <link rel="stylesheet" href="{{asset('plugins/datatables/extensions/Select/css/select.bootstrap.css')}}">--}}
+    @stack('css')
 @endsection
 
 @section('body')
@@ -57,3 +58,7 @@
     </footer>
 @endsection
 
+
+@section('scripts')
+    @stack('script')
+@endsection

@@ -6,6 +6,7 @@ use Illuminate\Database\Migrations\Migration;
 class CreateCpacsTable extends Migration
 {
     /**
+     *  Tabla donde se guarda la certificacion pac
      * Run the migrations.
      *
      * @return void
@@ -17,8 +18,8 @@ class CreateCpacsTable extends Migration
             $table->integer('pac_id')->unsigned();
             $table->string('partida');//item
             $table->string('cpc')->nullable();
-            $table->decimal('monto',10,2);
-            $table->string('certificado')->nullable();
+            $table->decimal('monto',10,2); //Sin iva monto/1.12
+            $table->string('certificado')->nullable(); //archivo escaneado de la cpac
             $table->timestamps();
         });
     }

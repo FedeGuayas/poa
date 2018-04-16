@@ -44,7 +44,7 @@
                         <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
                             <div class="form-group">
                                 {!! Form::label('num_doc','Cédula:') !!} <span class="text-danger fa-lg">*</span>
-                                {!! Form::text('num_doc',null,['class'=>'form-control','id'=>'num_doc','required'])!!}
+                                {!! Form::text('num_doc',null,['class'=>'form-control','id'=>'num_doc','required','onkeypress'=>"if (this.value.length > 9) {return false}"])!!}
                             </div>
                         </div>
                         <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
@@ -53,10 +53,18 @@
                                 {!! Form::email('email',null,['class'=>'form-control','placeholder'=>'ejemplo@mail.com','id'=>'email','required'])!!}
                             </div>
                         </div>
+                    </div>
+                    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                        <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
+                            <div class="form-group">
+                                {!! Form::label('tratamiento','Tratamiento:') !!} <span class="text-danger fa-lg">*</span>
+                                {!! Form::text('tratamiento',null,['class'=>'form-control', 'placeholder'=>'Ing , Lic','id'=>'tratamiento','style'=>'text-transform:uppercase','onkeypress'=>"if (this.value.length > 5) {return false}"]) !!}
+                            </div>
+                        </div>
                         <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
                             <div class="form-group">
                                 {!! Form::label('cargo','Cargo:') !!}
-                                {!! Form::text('cargo',null,['class'=>'form-control','id'=>'cargo'])!!}
+                                {!! Form::text('cargo',null,['class'=>'form-control','id'=>'cargo','style'=>'text-transform:uppercase'])!!}
                             </div>
                         </div>
                     </div>

@@ -54,25 +54,29 @@
             </tfoot>
             <tbody>
             @foreach($reformas as $reforma)
+                {{--Si el trabajador pertenece al area que se realizo la reforma y es analista o responsable-poa,
+                              o  es root o administrador, mostrarlo--}}
+
+                @if ( ( (Auth::user()->worker->departamento->area_id==$reforma->aiID && (Auth::user()->hasRole('analista') || Auth::user()->hasRole('responsable-poa'))) ) || (Auth::user()->hasRole('root') || Auth::user()->hasRole('administrador')))
                 <tr>
                     <td>{{$reforma->id}}</td>
                     <td>{{$reforma->area}}</td>
                     <td>$ {{$reforma->monto_orig}}</td>
                     <td>{{$reforma->cod_programa.'-'.$reforma->cod_actividad.'-'.$reforma->cod_item}}</td>
-                    <td>{{$reforma->tipo}}</td>
+                    <td>{{$reforma->tipo_reforma}}</td>
                     <td>{{$reforma->item}}</td>
                     <td>{{$reforma->mes}}</td>
                     <td>${{$reforma->total_destino}}</td>
                     <td>{{$reforma->nombres.' '.$reforma->apellidos}} </td>
                     <td>
-                        @if ($reforma->estado=='Pendiente')
+                        @if ($reforma->estado==\App\Reforma::REFORMA_PENDIENTE)
                             <span class="label label-warning">Pendiente</span>
-                        @else
+                        @elseif($reforma->estado==\App\Reforma::REFORMA_APROBADA)
                             <span class="label label-success">Aprobada</span>
-                    @endif
+                        @endif
                     <td>
                         @permission('admin-reformas')
-                        @if ($reforma->estado=='Pendiente')
+                        @if ($reforma->estado== \App\Reforma::REFORMA_PENDIENTE)
                             <a href="#!" class="btn btn-xs btn-primary tip aprobar" data-placement="top" title="Aprobar"
                                data-id="{{$reforma->id}}"><i
                                         class="fa fa-check-square-o" aria-hidden="true"></i>
@@ -105,6 +109,7 @@
                         @endpermission
                     </td>
                 </tr>
+                @endif
             @endforeach
             </tbody>
         </table>

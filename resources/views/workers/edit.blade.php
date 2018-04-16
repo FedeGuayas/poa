@@ -45,7 +45,7 @@
                         <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
                             <div class="form-group">
                                 {!! Form::label('num_doc_edit','Cédula:') !!} <span class="text-danger fa-lg">*</span>
-                                {!! Form::text('num_doc_edit',null,['class'=>'form-control','id'=>'num_doc_edit','required'])!!}
+                                {!! Form::text('num_doc_edit',null,['class'=>'form-control','id'=>'num_doc_edit','required','onkeypress'=>"if (this.value.length > 9) {return false}"])!!}
                             </div>
                         </div>
                         <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
@@ -54,13 +54,23 @@
                                 {!! Form::email('email_edit',null,['class'=>'form-control','placeholder'=>'ejemplo@mail.com','id'=>'email_edit','required'])!!}
                             </div>
                         </div>
+                    </div>
+
+                    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                        <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
+                            <div class="form-group">
+                                {!! Form::label('tratamiento_edit','Tratamiento:') !!} <span class="text-danger fa-lg">*</span>
+                                {!! Form::text('tratamiento_edit',null,['class'=>'form-control', 'placeholder'=>'Ing , Lic','id'=>'tratamiento_edit','style'=>'text-transform:uppercase','onkeypress'=>"if (this.value.length > 5) {return false}"]) !!}
+                            </div>
+                        </div>
                         <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
                             <div class="form-group">
                                 {!! Form::label('cargo_edit','Cargo:') !!}
-                                {!! Form::text('cargo_edit',null,['class'=>'form-control','id'=>'cargo_edit'])!!}
+                                {!! Form::text('cargo_edit',null,['class'=>'form-control','id'=>'cargo_edit','style'=>'text-transform:uppercase'])!!}
                             </div>
                         </div>
                     </div>
+
                 </div>
                 {!! Form::close() !!}
                 {{--</div>--}}

@@ -85,6 +85,12 @@
                                 {!! Form::textarea('concepto',null,['class'=>'form-control','placeholder'=>'Descripción del proceso...','rows'=>'3','style'=>'text-transform:uppercase']) !!}
                             </div>
                         </div>
+                        <div class="col-lg-6">
+                            <div class="form-group">
+                                {!! Form::checkbox('proceso_pac',null,null,['id'=>'proceso_pac']) !!}
+                                {!! Form::label('proceso_pac','Seleccione si es un proceso PAC') !!}
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-group">

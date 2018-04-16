@@ -85,7 +85,6 @@
                         <div class="form-group">
                             {!! Form::label('mes','',['class'=>'sr-only']) !!}
                             {!! Form::select('mes',$list_meses,$mes,['class'=>'form-control selectpicker','placeholder'=>'Meses...','id'=>'mes']) !!}
-                        {{--{!! Form::select('mes',['1'=>'ENERO','2'=>'FEBRERO','3'=>'MARZO','4'=>'ABRIL','5'=>'MAYO','6'=>'JUNIO','7'=>'JULIO','8'=>'AGOSTO','9'=>'SEPTIEMBRE','10'=>'OCTUBRE','11'=>'NOVIEMBRE','12'=>'DICIEMBRE'],null,['class'=>'form-control selectpicker','placeholder'=>'Meses...','id'=>'mes']) !!}--}}
                         </div>
                         </div>
                         <div class="col-lg-3">
@@ -244,7 +243,7 @@
                         cancelButtonText: " NO!",
                         closeOnConfirm: false,
                         closeOnCancel: false,
-                        showLoaderOnConfirm: true,
+                        showLoaderOnConfirm: true
                     },
                     function (isConfirm) {
                         if (isConfirm) {
@@ -453,19 +452,19 @@
 
             if (area_id != '' && mes != '' && item_id != '' && valor > 0) {
                 subtotal[cont] = valor;
-                tot = tot + subtotal[cont];
+                tot = Math.round((tot + subtotal[cont])*100)/100;
                 if (tot <= disponible) {
                     var fila = '<tr class="selected" id="fila' + cont + '"><td><button class="btn btn-sm btn-danger" title="Eliminar" onclick="eliminar(' + cont + ');"><i class="fa fa-trash-o" aria-hidden="true"></i></button></td><td><input type="hidden" name="area_id[]" value="' + area_id + '">' + area + '</td><td><input type="hidden" name="mes[]" value="' + mes + '">' + mes_mes + '</td><td style="color: #5cb85c"><input type="hidden" name="subtotal_id[]" value="' + subtotal[cont] + '"><b>$ ' + subtotal[cont].toFixed(2) + '</b></td></tr>';
                     detalles.append(fila);
                     evaluar();
                     limpiar();
                     $("#total").html("$ " + tot.toFixed(2));
-                    resto = disponible - tot;
-                    $("#resto").val(resto.toFixed(2));
+                    resto = Math.round((disponible - tot)*100)/100;
+                    $("#resto").val(resto);
                     cont++;
                 } else {
-                    tot = tot - subtotal[cont];
-                    $("#resto").val(resto.toFixed(2));
+                    tot = Math.round((tot - subtotal[cont])*100)/100;
+                    $("#resto").val(resto);
                     $("#total").html("$ " + tot.toFixed(2));
                     swal("Error! :(", "No puede superar el monto disponible!", "error")
                 }
@@ -485,10 +484,10 @@
             }
         }
         function eliminar(index) {
-            tot = tot - subtotal[index];
-            resto = resto + subtotal[index];
+            tot = Math.round((tot - subtotal[index])*100)/100 ;
+            resto = Math.round((resto + subtotal[index])*100)/100 ;
             $("#total").html("$ " + tot.toFixed(2));
-            $("#resto").val(resto.toFixed(2));
+            $("#resto").val(resto);
             $("#fila" + index).remove();
             evaluar();
         }

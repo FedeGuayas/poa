@@ -69,7 +69,6 @@
                     <div class="row">
                         <div class="col-lg-2">
                             <div class="form-group">
-                                {{--{!! Form::label('area','',['class'=>'sr-only']) !!}--}}
                                 {!! Form::select('area',$list_areas,null,['class'=>'form-control selectpicker','placeholder'=>'Direcciones...','id'=>'area']) !!}
                             </div>
                         </div>
@@ -93,14 +92,6 @@
                                 {!! Form::button('<i class="fa fa-plus" aria-hidden="true"></i>',['class'=>'btn btn-warning tip','data-placement'=>'top', 'title'=>'Agregar','id'=>'agregar']) !!}
                             </div>
                         </div>
-                        {{--<div class="col-lg-2 pull-right">--}}
-                        {{--<div class="form-group">--}}
-                        {{--<div class="input-group has-error">--}}
-                        {{--<span class="input-group-addon"><i class="fa fa-dollar text-warning"></i></span>--}}
-                        {{--{!! Form::number('resto',null,['class'=>'form-control tip','data-placement'=>'top','title'=>'Por distribuir','placeholder'=>'0.00','id'=>'resto','readonly']) !!}--}}
-                        {{--</div>--}}
-                        {{--</div>--}}
-                        {{--</div>--}}
                     </div>
 
                     <div class="row">
@@ -326,7 +317,7 @@
             var detalles = $("#detalles");
             if (area_id != '' && mes != '' && item_id != '' && valor > 0) {
                 subtotal[cont] = valor;
-                tot = tot + subtotal[cont];
+                tot = Math.round((tot + subtotal[cont])*100)/100;
 
                 var fila = '<tr class="selected" id="fila' + cont + '"><td><button class="btn btn-sm btn-danger" title="Eliminar" onclick="eliminar(' + cont + ');"><i class="fa fa-trash-o" aria-hidden="true"></i></button></td><td><input type="hidden" name="area_id[]" value="' + area_id + '">' + area + '</td><td><input type="hidden" name="mes[]" value="' + mes + '">' + mes_mes + '</td><td style="color: #5cb85c"><input type="hidden" name="subtotal_id[]" value="' + subtotal[cont] + '"><b>$ ' + subtotal[cont].toFixed(2) + '</b></td></tr>';
                 detalles.append(fila);
@@ -351,7 +342,7 @@
             }
         }
         function eliminar(index) {
-            tot = tot - subtotal[index];
+            tot = Math.round((tot - subtotal[index])*100)/100;
             $("#total").html("$ " + tot.toFixed(2));
             $("#fila" + index).remove();
             evaluar();

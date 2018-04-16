@@ -101,7 +101,6 @@ class ItemController extends Controller
             else  return redirect()->route('admin.items.index')->with('message',$message);
 
         } catch (\Exception $e) {
-
             DB::rollback();
             $message="Error al insertar los datos en la BBDD";
             if ($request->ajax()){

@@ -32,33 +32,33 @@
                     <table class="table table-striped table-bordered table-condensed table-hover" id="resumen_table"
                            cellspacing="0" style="display: none;">
                         {{--<caption>--}}
-                            {{--@if ($mes)--}}
-                            {{--<a href="#!" class="btn btn-xs btn-default tip" data-placement="top" title="Imprimir" target="_blank">--}}
-                                {{--<i class="fa fa-2x fa-print"></i>--}}
-                            {{--</a>--}}
-                            {{--@endif--}}
+                        {{--@if ($mes)--}}
+                        {{--<a href="#!" class="btn btn-xs btn-default tip" data-placement="top" title="Imprimir" target="_blank">--}}
+                        {{--<i class="fa fa-2x fa-print"></i>--}}
+                        {{--</a>--}}
+                        {{--@endif--}}
                         {{--</caption>--}}
                         <thead>
-                            <tr>
-                                <th>Dirección</th>
-                                <th>Planificado</th>
-                                <th>Devengado</th>{{--Devengado esigef - Ingresos extras--}}
-                                <th>No Ejecutado</th>{{--Planificado FDG - Devengado esigef - Ingresos extras--}}
-                                <th>%Ejec</th>
-                                <th>%No Ejec</th>
-                                {{--<th>extra</th>--}}
-                            </tr>
+                        <tr>
+                            <th>Dirección</th>
+                            <th>Planificado</th> {{--sum(montos) de area_item=>poafdg sin extras--}}
+                            <th>Devengado</th>{{--Devengado esigef - Ingresos extras--}}
+                            <th>No Ejecutado</th>{{--Planificado FDG -( Devengado esigef - Ingresos extras)--}}
+                            <th>%Ejec</th> {{--devengado esigef sin extra / planificado (area_item) fdg sin extra--}}
+                            <th>%No Ejec</th>
+                            {{--<th>extra</th>--}}
+                        </tr>
                         </thead>
                         <tfoot>
-                            <tr>
-                                <th>Total General</th>
-                                <th></th>
-                                <th></th>
-                                <th></th>
-                                <th></th>
-                                <th></th>
-                                {{--<th></th>--}}
-                            </tr>
+                        <tr>
+                            <th>Total General</th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            {{--<th></th>--}}
+                        </tr>
                         </tfoot>
                         <tbody>
                         @foreach($resumen as $res)
@@ -66,22 +66,27 @@
                                 <td>{{$res->area}}</td>
                                 <td>$ {{number_format($res->planificado,2,'.',' ')}}</td>
                                 <td>
-                                $ {{number_format(($res->devengado-$res->extra),2,'.',' ')}}
+                                    $ {{number_format(($res->devengado-$res->extra),2,'.',' ')}}
                                 </td>
                                 <td>
                                     $ {{number_format(($res->planificado-($res->devengado-$res->extra)),2,'.',' ')}}
                                 </td>
                                 <td>
-                                    @if ($res->devengado/$res->total*100 <=60)
-                                        <span class="label la-2x label-danger">{{number_format($res->devengado/$res->total*100,2,'.',' ')}} %</span>
-                                        @elseif($res->devengado/$res->total*100 <=90 )
-                                        <span class="label la-2x label-warning">{{number_format($res->devengado/$res->total*100,2,'.',' ')}} %</span>
-                                        @else
-                                        <span class="label la-2x label-success">{{number_format($res->devengado/$res->total*100,2,'.',' ')}} %</span>
+                                    {{--@if ($res->devengado/$res->total*100 <=60)--}}
+                                    @if (($res->devengado-$res->extra)/($res->planificado)*100 <=60)
+                                        <span class="label la-2x label-danger">{{number_format(($res->devengado-$res->extra)/($res->planificado)*100,2,'.',' ')}}
+                                            %</span>
+                                    @elseif(($res->devengado-$res->extra)/($res->planificado)*100 <=90 )
+                                        <span class="label la-2x label-warning">{{number_format(($res->devengado-$res->extra)/($res->planificado)*100,2,'.',' ')}}
+                                            %</span>
+                                    @else
+                                        <span class="label la-2x label-success">{{number_format(($res->devengado-$res->extra)/($res->planificado)*100,2,'.',' ')}}
+                                            %</span>
                                     @endif
                                 </td>
                                 <td>
-                                    {{number_format(100-($res->devengado/$res->total*100),2,'.','')}} %
+                                    {{number_format(100-(($res->devengado-$res->extra)/($res->planificado)*100),2,'.','')}}
+                                    %
                                 </td>
                                 {{--<td>{{$res->extra}}</td>--}}
                             </tr>
@@ -103,15 +108,15 @@
                     <table class="table table-striped table-bordered table-condensed table-hover" id="resumen2_table"
                            cellspacing="0" style="display: none;">
                         <thead>
-                            <th style="width: 80px">Dirección</th>
-                            <th style="width: 100px">Código</th>
-                            <th>Item</th>
-                            <th>Ejecutado</th>
-                            <th>Devengado</th>
-                            <th>Disponible</th>
-                            <th>Responsable</th>
-                            <th>Procedimiento</th>
-                            <th>Concepto</th>
+                        <th style="width: 80px">Dirección</th>
+                        <th style="width: 100px">Código</th>
+                        <th>Item</th>
+                        <th>Ejecutado</th>
+                        <th>Devengado</th>
+                        <th>Disponible</th>
+                        <th>Responsable</th>
+                        <th>Procedimiento</th>
+                        <th>Concepto</th>
                         </thead>
                         <tfoot>
                         <th class="search-filter">filtrar</th>
@@ -126,7 +131,11 @@
                         </tfoot>
                         <tbody>
                         @foreach($devengado_pacs as $pacs)
-                            <tr>
+                            {{--Si el trabajador pertenece al area que se asigno el pac y es analista o responsable-poa,
+                              o  es root o administrador, mostrarlo--}}
+
+                            @if (  (Auth::user()->worker->departamento->area_id==$pacs->area_trabajador && (Auth::user()->hasRole('analista') || Auth::user()->hasRole('responsable-poa') )) || (Auth::user()->hasRole('root') || Auth::user()->hasRole('administrador')))
+                                <tr>
                                 <td>{{$pacs->area}}</td>
                                 <td>{{$pacs->cod_programa.'-'.$pacs->cod_actividad.'-'.$pacs->cod_item}}</td>
                                 <td>{{$pacs->item}}</td>
@@ -137,6 +146,7 @@
                                 <td>{{$pacs->procedimiento}}</td>
                                 <td>{{$pacs->concepto}}</td>
                             </tr>
+                                @endif
                         @endforeach
                         </tbody>
                         {{--<tr>--}}
@@ -157,10 +167,10 @@
 
 
     </div>{{--./col-md-12--}}
-<div id="prueba">
+    <div id="prueba">
 
 
-</div>
+    </div>
 
 
 
@@ -181,8 +191,8 @@
 
 
             var table = $("#resumen_table").DataTable({
-                lengthMenu: [[10,15, -1], [10,15, 'Todo']],
-                select:true,
+                lengthMenu: [[10, 15, -1], [10, 15, 'Todo']],
+                select: true,
                 "language": {
                     "decimal": "",
                     "emptyTable": "No se encontraron datos en la tabla",
@@ -208,7 +218,7 @@
                         "sortDescending": ": Activar para ordenar descendentemente"
                     },
                     "buttons": {
-                        "colvis": "Cambiar Columnas",
+                        "colvis": "Columnas",
                         "copy": "Copiar",
                         "print": "Imprimir"
                     },
@@ -220,43 +230,43 @@
                         }
                     }
                 },
-                "footerCallback": function ( row, data, start, end, display ) {
+                "footerCallback": function (row, data, start, end, display) {
                     var api = this.api(), data;
 
                     // formatear los datos para sumar
-                    var intVal = function ( i ) {
+                    var intVal = function (i) {
 //                        return typeof i === 'string' ?
 //                        i.replace(/[\$,]/g, '')*1 :
 //                                typeof i === 'number' ?
 //                                        i : 0;
                         return typeof i === 'string' ?
-                        i.replace(/[^\d.-]/g, '')*1 :
-                                typeof i === 'number' ?
-                                        i : 0 ;
+                            i.replace(/[^\d.-]/g, '') * 1 :
+                            typeof i === 'number' ?
+                                i : 0;
                     };
                     // Total en la pagina actual
-                    pageTotal_plan = api.column(1,{ page: 'current'} ).data().reduce( function (a, b) {
+                    pageTotal_plan = api.column(1, {page: 'current'}).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
-                    }, 0 );
-                    pageTotal_dev = api.column(2,{ page: 'current'} ).data().reduce( function (a, b) {
+                    }, 0);
+                    pageTotal_dev = api.column(2, {page: 'current'}).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
-                    }, 0 );
-                    pageTotal_disp = api.column( 3, { page: 'current'} ).data().reduce( function (a, b) {
-                        return (intVal(a) + intVal(b));
-                    }, 0 );
-                    pageTotal_porciento_eje = api.column( 4, { page: 'current'} ).data().reduce( function (a, b) {
-                        return (pageTotal_dev/pageTotal_plan*100).toFixed(2);
-                    }, 0 );
-                    pageTotal_porciento_noeje = api.column( 5, { page: 'current'} ).data().reduce( function (a, b) {
-                        return (pageTotal_disp/pageTotal_plan*100).toFixed(2);
-                    }, 0 );
+                    }, 0);
+                    pageTotal_disp = api.column(3, {page: 'current'}).data().reduce(function (a, b) {
+                        return (intVal(a) + intVal(b)).toFixed(2);
+                    }, 0);
+                    pageTotal_porciento_eje = api.column(4, {page: 'current'}).data().reduce(function (a, b) {
+                        return (pageTotal_dev / pageTotal_plan * 100).toFixed(2);
+                    }, 0);
+                    pageTotal_porciento_noeje = api.column(5, {page: 'current'}).data().reduce(function (a, b) {
+                        return (pageTotal_disp / pageTotal_plan * 100).toFixed(2);
+                    }, 0);
 
                     // actualzar total en el pie de tabla
-                    $( api.column( 1 ).footer() ).html('$'+pageTotal_plan );
-                    $( api.column( 2 ).footer() ).html('$'+pageTotal_dev );
-                    $( api.column( 3 ).footer() ).html('$'+pageTotal_disp );
-                    $( api.column( 4 ).footer() ).html( pageTotal_porciento_eje+' %');
-                    $( api.column( 5 ).footer() ).html( pageTotal_porciento_noeje+' %' );
+                    $(api.column(1).footer()).html('$' + pageTotal_plan);
+                    $(api.column(2).footer()).html('$' + pageTotal_dev);
+                    $(api.column(3).footer()).html('$' + pageTotal_disp);
+                    $(api.column(4).footer()).html(pageTotal_porciento_eje + ' %');
+                    $(api.column(5).footer()).html(pageTotal_porciento_noeje + ' %');
                 },
                 lengthChange: true,
                 dom: 'Blfrtip',
@@ -280,8 +290,7 @@
 //                    .appendTo( $('.col-sm-6:eq(0)', table.table().container() ) );
 
             table.buttons().container()
-                    .appendTo( '#resumen_table_wrapper .col-md-6:eq(0)' );
-
+                .appendTo('#resumen_table_wrapper .col-md-6:eq(0)');
 
 
             $("#resumen_table").fadeIn();
@@ -304,7 +313,7 @@
 
             var table2 = $("#resumen2_table").DataTable({
                 lengthMenu: [[5, 10, -1], [5, 10, 'Todo']],
-                select:true,
+                select: true,
                 "language": {
                     "decimal": "",
                     "emptyTable": "No se encontraron datos en la tabla",
@@ -328,6 +337,11 @@
                         "sortAscending": ": Activar para ordenar ascendentemente",
                         "sortDescending": ": Activar para ordenar descendentemente"
                     },
+                    "buttons": {
+                        "colvis": "Columnas",
+                        "copy": "Copiar",
+                        "print": "Imprimir"
+                    },
                     "select": {
                         "rows": {
                             "_": "Ha seleccionado %d filas",
@@ -336,43 +350,43 @@
                         }
                     }
                 },
-                "footerCallback": function ( row, data, start, end, display ) {
+                "footerCallback": function (row, data, start, end, display) {
                     var api = this.api(), data;
 
                     // formatear los datos para sumar
-                    var intVal = function ( i ) {
+                    var intVal = function (i) {
                         return typeof i === 'string' ?
-                        i.replace(/[\$,]/g, '')*1 :
-                                typeof i === 'number' ?
-                                        i : 0;
+                            i.replace(/[\$,]/g, '') * 1 :
+                            typeof i === 'number' ?
+                                i : 0;
                     };
                     // Total en todas las paginas
-                    total_ejecutado = api.column( 3 ).data().reduce( function (a, b) {
+                    total_ejecutado = api.column(3).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
-                    }, 0 );
-                    total_devengado = api.column( 4 ).data().reduce( function (a, b) {
+                    }, 0);
+                    total_devengado = api.column(4).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
-                    }, 0 );
-                    total_disponible = api.column( 5 ).data().reduce( function (a, b) {
+                    }, 0);
+                    total_disponible = api.column(5).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
-                    }, 0 );
+                    }, 0);
 
 
                     // Total en la pagina actual
-                    pageTotal_eje = api.column(3,{ page: 'current'} ).data().reduce( function (a, b) {
+                    pageTotal_eje = api.column(3, {page: 'current'}).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
-                    }, 0 );
-                    pageTotal_dev = api.column(4,{ page: 'current'} ).data().reduce( function (a, b) {
+                    }, 0);
+                    pageTotal_dev = api.column(4, {page: 'current'}).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
-                    }, 0 );
-                    pageTotal_disp = api.column( 5, { page: 'current'} ).data().reduce( function (a, b) {
+                    }, 0);
+                    pageTotal_disp = api.column(5, {page: 'current'}).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
-                    }, 0 );
+                    }, 0);
 
                     // actualzar total en el pie de tabla
-                    $( api.column( 3 ).footer() ).html('$'+pageTotal_eje +'<p style="color: #0c199c">'+' ( $'+ total_ejecutado +' )'+'</p>');
-                    $( api.column( 4 ).footer() ).html('$'+pageTotal_dev +'<p style="color: #0c199c">'+' ( $'+ total_devengado +' )'+'</p>');
-                    $( api.column( 5 ).footer() ).html('$'+pageTotal_disp +'<p style="color: #0c199c">'+' ( $'+ total_disponible +' )'+'</p>');
+                    $(api.column(3).footer()).html('$' + pageTotal_eje + '<p style="color: #0c199c">' + ' ( $' + total_ejecutado + ' )' + '</p>');
+                    $(api.column(4).footer()).html('$' + pageTotal_dev + '<p style="color: #0c199c">' + ' ( $' + total_devengado + ' )' + '</p>');
+                    $(api.column(5).footer()).html('$' + pageTotal_disp + '<p style="color: #0c199c">' + ' ( $' + total_disponible + ' )' + '</p>');
                 },
                 dom: 'Blfrtip',
                 buttons: [
@@ -384,20 +398,20 @@
                     },
                     {
                         extend: 'pdf',
-                        title: 'PAC - AREA',
+                        title: 'PAC',
                         message: 'Presupuesto anual de compras ',
                         orientation: 'landscape',
-                        pageSize: 'letter',
+                        pageSize: 'A4',
                         exportOptions: {
                             columns: ':visible'
                         }
                     },
                     'colvis'
                 ],
-                columnDefs: [ {
+                columnDefs: [{
 //                    targets: -1,
                     visible: false
-                } ]
+                }]
             });
 
             $("#resumen2_table").fadeIn();

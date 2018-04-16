@@ -43,7 +43,7 @@ Route::group(['prefix' => 'admin','middleware'=>'auth'], function () {
     
     
     Route::get('programa/{id}/actividades',['uses'=>'ProgramaController@loadActividades', 'as'=>'loadActividades']);
-    Route::post('programa/actividades{actividades?}',['uses'=>'ProgramaController@asociarActividades', 'as'=>'asociarActividades']);
+    Route::post('programa/{id}/actividades{actividades?}',['uses'=>'ProgramaController@asociarActividades', 'as'=>'asociarActividades']);
 
     Route::get('presupuesto/load',['uses'=>'ItemController@loadPresupuesto', 'as'=>'loadPresupuesto']);
     Route::post('presupuesto/import',['uses'=>'ItemController@importPresupuesto', 'as'=>'importPresupuesto']);
@@ -53,28 +53,75 @@ Route::group(['prefix' => 'admin','middleware'=>'auth'], function () {
     Route::get('item/ingresos{data?}',['uses'=>'ExtraController@loadExtra', 'as'=>'loadExtra']);
 
     Route::get('workers/departamento{data?}',['uses'=>'WorkerController@getDpto', 'as'=>'getDpto']);
+
+
    
 //    Route::get('pacs/lists/areas',['uses'=>'PacController@indexPacArea', 'as'=>'indexPacArea']);
     Route::get('pac/create/{area_item}',['uses'=>'PacController@createPac', 'as'=>'createPac']);
     Route::get('pacs/areas',['uses'=>'PacController@indexPlanificacion', 'as'=>'indexPlanificacion']);
     Route::get('pacs/gestion{id}',['uses'=>'PacController@confirmarDevengado', 'as'=>'confirmarDevengado']);
     Route::get('pacs/pdf/{data?}',['uses'=>'PacController@pacsPDF', 'as'=>'admin.pacs.pac-pdf']);
+
+    //Vista planificacion para agregar inclusion Pac o No Pac
+    Route::get('pacs/inclusion/areas',['uses'=>'InclusionController@indexIncPac', 'as'=>'indexIncPac']);
+    //vista para generar el pdf de la Solicitud de Inclusion PAC
+    Route::get('pacs/inclusion_pac/create',['uses'=>'InclusionController@createIPAC', 'as'=>'create.inclusion-pac']);
+    //guardar info de la Solicitud de Inclusion PAC
+    Route::post('pacs/inclusion_pac/store',['uses'=>'InclusionController@storeIPAC', 'as'=>'store.inclusion-pac']);
+    //subir el pdf de la Solicitud de Inclusión PAC
+    Route::post('pacs/inclusion/inc-pac-file',['uses'=>'InclusionController@postFileIncPAC','as'=>'pac.inclusion.postFileIncPAC']);
+    //Descargar pdf de la Inclsusion PAC
+    Route::get('pacs/inclusion/{pac_id}/IncPACDownload',['uses'=>'InclusionController@IncPacDownload','as' => 'pac.inclusion.IncPacDownload']);
+
+    //admin.pac.sol_certificacion
+    Route::get('pac/{pac_id}/sol_cert_pac_presp',['uses'=>'PacController@sol_cert','as' => 'admin.pac.sol_certificacion']);
+
+    Route::get('pac/sol-certificaciones/{data?}',['uses'=>'PacController@sendSolCertificaciones', 'as'=>'solCertPacPresup']);
+
+    //subir el pdf de la Solicitud de reforma PAC (SRPAC)
+    Route::post('pac/srpac-file',['uses'=>'SrpacController@postFileSRPAC','as'=>'pac.postFileSRPAC']);
+    //Descargar pdf de la Solicitud de reforma PAC (SRPAC)
+    Route::get('pac/{pac_id}/SRPACDownload',['uses'=>'SrpacController@SRPACDownload','as' => 'pac.SRPACdownload']);
+
     //generar el pdf de la CPAC
-    Route::get('pacs/certificacion-pac/{pac}',['uses'=>'PacController@certificacionPDF', 'as'=>'admin.pacs.certificacion-pac']);
+    Route::get('pacs/certificacion-pac/{pac}',['uses'=>'CpacController@certificacionPDF', 'as'=>'admin.pacs.certificacion-pac']);
     //subir el pdf CPAC
-    Route::put('pac/cpac-file',['uses'=>'PacController@postFileCPAC','as'=>'pac.postFileCPAC']);
+    Route::post('pac/cpac-file/upload',['uses'=>'CpacController@postFileCPAC','as'=>'pac.postFileCPAC']);
     //Descargar pdf CPAC
-    Route::get('pac/{pac_id}/CPACDownload',['uses'=>'PacController@CPACDownload','as' => 'pac.CPACdownload']);
+    Route::get('pac/{pac_id}/CPACDownload',['uses'=>'CpacController@CPACDownload','as' => 'pac.CPACdownload']);
+
+    //subir el pdf de Certificacion Presupuestaria
+    Route::post('pac/cert-presup-file/upload',['uses'=>'PacController@postFileCPresup','as'=>'pac.postFileCPresup']);
+    //Descargar pdf CPAC
+    Route::get('pac/{pac_id}/CPresupDownload',['uses'=>'PacController@CPresupDownload','as' => 'pac.CPresupDownload']);
+
+    //Cargar vista para liberar recursos a reformar
+    Route::get('pac/{pac_id}/liberar',['uses'=>'PacController@getLiberar','as'=>'pac.getLiberar']);
     //permitir reformar disponible del proceso pac
     Route::put('pac/{pac_id}/to_reform',['uses'=>'PacController@permitReform','as'=>'pac.permitReform']);
 
+//borrar es para probar pdf del informe tecnico de la reforma
+//    Route::get('reform/{reforma}/informe',['uses'=>'ReformaController@verInformePDF', 'as'=>'admin.reforma.verinforme']);
+
+    //area_item (poafdg) planificacion
     Route::get('poafdg/planificacion',['uses'=>'PoaController@poaFDG', 'as'=>'poaFDG']);
     Route::get('item',['uses'=>'PoaController@getItem', 'as'=>'getItem']);
     Route::get('codigo',['uses'=>'PoaController@getUniqueItem', 'as'=>'getUniqueItem']);
     Route::get('poafdg/area/{data?}',['uses'=>'PoaController@loadItemArea', 'as'=>'loadItemArea']);
     Route::post('poafdg/planificacion',['uses'=>'PoaController@storePlanificacion', 'as'=>'storePlanificacion']);
 
-    Route::get('reformas/solicitud/{pac}',['uses'=>'ReformaController@createReforma', 'as'=>'createReforma']);//origen reforma
+    //vista agregar inclusion
+    Route::get('poafdg/inclusion',['uses'=>'InclusionController@poaInclusion', 'as'=>'admin.inclusion']);
+    Route::get('poafdg/inclusion/getitem',['uses'=>'InclusionController@getItem', 'as'=>'inclusion.getItem']);
+    Route::get('poafdg/inclusion/codigo',['uses'=>'InclusionController@getUniqueItem', 'as'=>'inclusion.getUniqueItem']);
+    Route::get('poafdg/inclusion/area/{data?}',['uses'=>'InclusionController@loadItemArea', 'as'=>'inclusion.loadItemArea']);
+    Route::post('poafdg/inclusion',['uses'=>'InclusionController@storeInclusion', 'as'=>'storeInclusion']);
+    Route::delete('poafdg/inclusion/{id}/eliminar',['uses'=>'InclusionController@destroy', 'as'=>'destroyInclusion']);
+    //vista para crear el proceso de la inclusion a nivel de area
+    Route::get('pac/create/inclusion/{area_item}',['uses'=>'InclusionController@createPacInclusion', 'as'=>'createPacInclusion']);
+    Route::post('pac/store/inclusion',['uses'=>'InclusionController@storePacInclusion', 'as'=>'storePacInclusion']);
+
+    Route::get('reformas/solicitud',['uses'=>'ReformaController@createReforma', 'as'=>'createReforma']);//origen reforma
     Route::get('reformas/destino',['uses'=>'ReformaController@destino', 'as'=>'destinoReforma']);//destino reforma
     Route::post('reformas/pacs_destino',['uses'=>'ReformaController@storePacsDestino', 'as'=>'admin.reformas.store.destino']);
     Route::get('reformas/confirm/{reforma}',['uses'=>'ReformaController@confirm', 'as'=>'admin.reformas.confirm']);
@@ -116,6 +163,7 @@ Route::group(['prefix' => 'admin','middleware'=>'auth'], function () {
     Route::resource('users', 'UserController');
     Route::resource('roles', 'RolesController');
     Route::resource('permissions', 'PermissionsController');
+    Route::resource('srpacs', 'SrpacController',['except'=>['index','show','edit','update','destroy']]);
 //    Route::get('config/cierre',['uses'=>'AperturaController@cierreMensual', 'as'=>'cierreMensual']);
 
 });

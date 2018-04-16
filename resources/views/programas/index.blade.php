@@ -72,7 +72,7 @@
         $(document).ready(function () {
 
             $(".form_noEnter").keypress(function (e) {
-                if (e.width == 13) {
+                if (e.which === 13) {
                     return false;
                 }
             });
@@ -99,7 +99,7 @@
             e.preventDefault();
             var row=$(this).parents('tr');
             var id=$(this).attr('data-id');
-            var form=$("#form-delete")
+            var form=$("#form-delete");
             var url=form.attr('action').replace('PROG:ID',id);
             var data=form.serialize();
             swal({
@@ -112,7 +112,7 @@
                 cancelButtonText: " NO!",
                 closeOnConfirm: false,
                 closeOnCancel: false,
-                showLoaderOnConfirm: true,
+                showLoaderOnConfirm: true
                     },
                     function (isConfirm) {
                         if (isConfirm) {
@@ -141,7 +141,7 @@
 
         //Modal editar
         var mostrarEdit= function(id){
-            var url="{{route('admin.programas.edit',':ID')}}"
+            var url="{{route('admin.programas.edit',':ID')}}";
             var route=url.replace(':ID',id);
             var token = $("input[name=_token]").val();
             $("#form-update").trigger('reset');
@@ -155,18 +155,16 @@
                     $("#programa_edit").val(response.programa);
                 },
                 error: function (response) {
-                    console.log(response);
                 }
             });
         };
 
-        //Modal asociar actividad
-        var loadActividades= function(id){
-            var url="{{route('loadActividades',':ID')}}"
+        //Modal asociar actividades
+        var loadActividades= function(id){ //id=programa_id
+            var url="{{route('loadActividades',':ID')}}";
             var route=url.replace(':ID',id);
             var token = $("input[name=_token]").val();
             var act=$("#actividades_list");
-//            $("#actividades").val(response.actividades.id);
             $("#form-vincular").trigger('reset');
             $.ajax({
                 url: route,
@@ -174,14 +172,8 @@
                 headers: {'X-CSRF-TOKEN': token},
                 success: function (response) {
                     act.html(response);
-//                    var arr=[];
-//                    $.each(response.actividades, function (ind, elem) {
-//                        arr.push(elem.id);
-//                    });
-//                    act.val(arr);
                 },
                 error: function (response) {
-                    console.log(response);
                 }
             });
         };
@@ -198,10 +190,10 @@
         });
 
         $(document).on('click','.vincularActividad',function(event){
-            var id=$("#pro_id");
+            var id=$("#pro_id").val();
             var form=$("#form-vincular");
             var data=form.serialize();
-            var url="{{route('asociarActividades')}}";
+            var url="{{route('asociarActividades',':ID')}}";
             var route= url.replace(':ID',id);
             $(this).ajaxPost(route,'post','{{route('admin.programas.index')}}',data);
             $("#actividades-modal").modal('toggle');

@@ -92,6 +92,7 @@ class WorkerController extends Controller
             $worker->email = $request->input('email');
             $worker->num_doc = $request->input('num_doc');
             $worker->cargo = $request->input('cargo');
+            $worker->tratamiento = $request->input('tratamiento');
             $worker->departamento()->associate($departamento);
             $worker->save();
 
@@ -169,6 +170,7 @@ class WorkerController extends Controller
         $worker->email = $request->input('email');
         $worker->num_doc = $request->input('num_doc');
         $worker->cargo = $request->input('cargo');
+        $worker->tratamiento = $request->input('tratamiento');
         $worker->departamento()->associate($departamento);
         $worker->update();
 

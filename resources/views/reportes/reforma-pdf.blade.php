@@ -27,7 +27,7 @@
     <div style="text-align: center; position: relative">
         <p>
             <span><b>MINISTERIO DEL DEPORTE</b></span> <br>
-            <span><b>MATRIZ DE MODIFICACIÓN DEL PLAN OPERATIVO ANUAL 2017 ORGANISMOS DEPORTIVOS</b></span>
+            <span><b>MATRIZ DE MODIFICACIÓN DEL PLAN OPERATIVO ANUAL {{\Carbon\Carbon::now()->year}} ORGANISMOS DEPORTIVOS</b></span>
         </p>
     </div>
 </div>
@@ -60,10 +60,10 @@
         </thead>
         <tbody>
 
-            @foreach ($detalles_d as $dd)
+            @foreach ($detalles_d as $key=>$dd)
                     <tr >
                         {{--origen--}}
-                        <td>{{$reforma->cod_programa}}</td>
+                        <td style="text-align: center">{{++$key}}</td>
                         <td>{{$reforma->programa}}</td>
                         <td>{{sprintf("%'.03d",$reforma->cod_actividad).' '.$reforma->actividad}}</td>
                         <td>{{$reforma->cod_item}}</td>
@@ -72,13 +72,14 @@
                         <td>$ {{$dd->valor_dest}}</td>
 
                         {{--destino--}}
-                        <td>{{$dd->cod_programa}}</td>
+                        <td style="text-align: center">{{$key}}</td>
                         <td>{{$dd->programa}}</td>
                         <td>{{sprintf("%'.03d",$dd->cod_actividad).' '.$dd->actividad}}</td>
                         <td>{{$dd->cod_item}}</td>
                         <td>{{$dd->item}}</td>
                         <td>{{$dd->mes}}</td>
                         <td>$ {{$dd->valor_dest}}</td>
+
                     </tr>
 
             @endforeach
@@ -106,10 +107,10 @@
                 <p align="left">
                     _____________________________________
                 </p>
-                <p align="left">
-                    Nombre: <br>
-                    Cargo: <br>
-                    CI:
+                <p align="left" style="text-transform: capitalize">
+                    Nombre: {{Auth::user()->worker->tratamiento.'. '.Auth::user()->worker->getFullName()}}<br>
+                    Cargo: {{Auth::user()->worker->cargo}}<br>
+                    CI: {{Auth::user()->worker->num_doc}}
                 </p>
             </td>
             <td>
@@ -120,10 +121,10 @@
                 <p align="left">
                     _____________________________________
                 </p>
-                <p align="left">
-                    Nombre: <br>
-                    Cargo: <br>
-                    CI:
+                <p align="left" style="text-transform: capitalize">
+                    Nombre: {{$jefe_area->tratamiento.'. '.$jefe_area->getFullName()}} <br>
+                    Cargo: {{$jefe_area->cargo}}<br>
+                    CI: {{$jefe_area->num_doc}}
                 </p>
             </td>
             {{--<td>--}}

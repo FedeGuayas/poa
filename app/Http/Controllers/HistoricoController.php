@@ -126,7 +126,7 @@ class HistoricoController extends Controller
     }
 
     /**
-     * Guardar cierre en la tabla esigef
+     * Guardar cierre en la tabla esigef, del esigef cargado
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
@@ -159,7 +159,6 @@ class HistoricoController extends Controller
             }
 
             $cierre = DB::table('area_item as ai')
-                ->select('i.id', 'ci.ejercicio', 'i.cod_programa', 'i.cod_actividad', 'i.cod_item', 'prog.programa', 'act.actividad', 'i.item', 'area', 'ai.mes', 'ai.monto as planificado', DB::raw('IFNULL(extra,0) extra'), 'ci.devengado as dev_esigef', 'ci.codificado as cod_esigef')
                 ->join('items as i', 'i.id', '=', 'ai.item_id')
                 ->join('areas as a', 'a.id', '=', 'ai.area_id')
                 ->join('actividads as act', 'act.cod_actividad', '=', 'i.cod_actividad')
@@ -173,6 +172,7 @@ class HistoricoController extends Controller
                     $join->on('i.cod_actividad', '=', 'ci.actividad');
                     $join->on('i.cod_item', '=', 'ci.renglon');
                 })
+                ->select('i.id', 'ci.ejercicio', 'i.cod_programa', 'i.cod_actividad', 'i.cod_item', 'prog.programa', 'act.actividad', 'i.item', 'area', 'ai.mes', 'ai.monto as planificado', DB::raw('IFNULL(extra,0) extra'), 'ci.devengado as dev_esigef', 'ci.codificado as cod_esigef')
                 ->where('ai.mes', $mes_cod)
                 ->get();
 
@@ -277,7 +277,7 @@ class HistoricoController extends Controller
 
     public function exportHistorico(Request $request)
     {
-        if (Auth::user()->can('hacer-cierre')) {
+//        if (Auth::user()->can('hacer-cierre')) {
             $mes_cod = $request->input('mes');
             $ejercicio = $request->input('ejercicio');
 
@@ -646,7 +646,7 @@ class HistoricoController extends Controller
 
             }
 
-        }else return abort(403);
+//        }else return abort(403);
 
 /**
 

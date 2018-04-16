@@ -17,14 +17,12 @@ class CreateAreaItemTable extends Migration
             $table->integer('item_id')->unsigned();
             $table->integer('area_id')->unsigned();
             $table->decimal('monto',10,2);
-//            $table->enum('mes',['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE']);
             $table->unsignedTinyInteger('mes');
             $table->timestamps();
             
             $table->foreign('item_id')->references('id')->on('items')
                 ->onUpdate('cascade')->onDelete('restrict');
             $table->foreign('area_id')->references('id')->on('areas');
-            $table->unique(['item_id', 'mes']);
         });
     }
 

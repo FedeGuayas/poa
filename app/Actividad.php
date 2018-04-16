@@ -6,9 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Actividad extends Model
 {
-//    protected $fillable=[
-//      'cod_actividad','actividad'
-//    ];
+    protected $fillable=[
+      'cod_actividad','actividad'
+    ];
     
     public $timestamps=false;
 

@@ -39,7 +39,8 @@
                    aria-expanded="false" aria-controls="resumen"><i class="fa fa-minus"></i></a>
             </div>
             <div class="panel-body collapse in" id="resumen">
-                @permission('hacer-cierre')
+                @if ( (Auth::user()->hasRole('administrador') || Auth::user()->hasRole('root') || Auth::user()->hasRole('responsable-poa')) )
+                {{--@permission('hacer-cierre')--}}
                    {!! Form::open (['route' => 'admin.historico.export','method' => 'GET'])!!}
                    <div class="hidden">
                        {!! Form::select('mes',$list_meses,$mes,['class'=>'form-control selectpicker','placeholder'=>'Meses...','id'=>'mes']) !!}
@@ -49,7 +50,8 @@
                            title="Exportar" id="exportar"><i class="fa fa-file-excel-o" aria-hidden="true"></i> Exportar
                    </button>
                    {!! Form::close() !!}
-                @endpermission
+                {{--@endpermission--}}
+                @endif
                 <br>
                 <div class="table-responsive">
                     <table class="table table-striped table-bordered table-condensed table-hover" id="resumen_table"
@@ -96,8 +98,8 @@
                                 <td>{{$res->item}}</td>
                                 <td>{{$res->area}}</td>
                                 <td>$ {{number_format($res->planificado,2,'.','')}}</td>
-                                <td>$ {{number_format($res->extra,2,'.','')}} </td>
-                                <td>$ {{number_format(($res->dev_esigef),2,'.','')}} </td>
+                                <td>$ {{number_format($res->extras,2,'.','')}} </td>
+                                <td>$ {{number_format(($res->devengado),2,'.','')}} </td>
                                 {{--<td>$ {{number_format(($res->cod_esigef),2,'.','')}} </td>--}}
                             </tr>
                         @endforeach

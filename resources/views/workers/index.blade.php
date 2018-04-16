@@ -184,7 +184,7 @@
 
         //Modal editar
         var mostrarEdit = function (id) {
-            var url = "{{route('admin.workers.edit',':ID')}}"
+            var url = "{{route('admin.workers.edit',':ID')}}";
             var route = url.replace(':ID', id);
             var token = $("input[name=_token]").val();
             // $("#form-update").trigger('reset');
@@ -201,6 +201,7 @@
                     $("#email_edit").val(response.worker.email);
                     $("#num_doc_edit").val(response.worker.num_doc);
                     $("#cargo_edit").val(response.worker.cargo);
+                    $("#tratamiento_edit").val(response.worker.tratamiento);
                 },
                 error: function (response) {
                 }
@@ -216,6 +217,7 @@
             var email = $("#email_edit").val();
             var num = $("#num_doc_edit").val();
             var cargo = $("#cargo_edit").val();
+            var tratamiento = $("#tratamiento_edit").val();
             var data = {
                 dep_id: dep,
                 area_id: area,
@@ -223,7 +225,8 @@
                 apellidos: ape,
                 email: email,
                 num_doc: num,
-                cargo: cargo
+                cargo: cargo,
+                tratamiento: tratamiento
             };
             var url = "{{route('admin.workers.update',':ID')}}";
             var route = url.replace(':ID', id);

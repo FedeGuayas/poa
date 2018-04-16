@@ -19,7 +19,7 @@
         <hr>
 
         <div class="panel panel-info">
-            <div class="panel-heading clearfix">POA-FDG
+            <div class="panel-heading clearfix">PAC-FDG
                 <a href="#!" class="btn-collapse pull-right" data-toggle="collapse" data-target="#poa-area"
                    aria-expanded="false" aria-controls="poa-area"><i class="fa fa-minus"></i></a>
             </div>
@@ -32,9 +32,9 @@
                             <thead class="bg-info">
                             <th style="width: 100px;">Cod_item</th>
                             <th>Item</th>
-                            <th style="width: 100px;">Dirección</th>
-                            <th>Plan</th>
-                            <th>Disp.</th>
+                            <th style="width: 150px;">Dirección</th>
+                            <th style="width: 150px;">Plan</th>
+                            <th style="width: 150px;">Disp.</th>
                             <th style="width: 100px;">Mes</th>
                             <th>PAC</th>
                             </thead>
@@ -60,14 +60,17 @@
                                     <td>{{$ai->mes}}</td>
                                     <td>
                                         @permission('planifica-pac')
-                                            @if (($ai->monto-$ai->distribuido)>0)
-                                                @if (Auth::user()->worker->departamento->area->area==$ai->area)
-                                                <a href="{{route('createPac',$ai->id)}}" class="btn btn-xs btn-success tip"
+                                        {{--Si el usuario pertenece al area a la que se repartio el dinero o es root y Si hay disponibilidad de ese poa --}}
+                                        @if ( (Auth::user()->worker->departamento->area->area==$ai->area || Auth::user()->hasRole('root')) && ($ai->monto-$ai->distribuido)>0)
+                                            {{--Si no es una inclusion--}}
+                                            @if ($ai->inclusion==\App\AreaItem::INCLUSION_NO)
+                                                <a href="{{route('createPac',$ai->id)}}"
+                                                   class="btn btn-xs btn-success tip"
                                                    data-placement="top" title="Procesos">
                                                     <i class="fa fa-2x fa-money"></i>
                                                 </a>
-                                                @endif
                                             @endif
+                                        @endif
                                         @endpermission
                                     </td>
                                 </tr>
@@ -88,7 +91,8 @@
             </div>
             <div class="panel-body collapse in" id="resumen">
 
-                <table class="table table-striped table-bordered table-condensed table-hover table-responsive" id="pac_table"  cellspacing="0" width="100%" style="display: none;">
+                <table class="table table-striped table-bordered table-condensed table-hover table-responsive"
+                       id="pac_table" cellspacing="0" width="100%" style="display: none;">
                     <thead class="bg-info">
                     <th>Cod_item</th>
                     <th>Presupuesto</th>
@@ -129,14 +133,18 @@
                             <td>{{$pac->nombres}} {{$pac->apellidos}}</td>
                             <td>
                                 @permission('planifica-pac')
-                                @if (Auth::user()->worker->departamento->area->area==$pac->area)
+                                {{--Si el usuario pertenece al area a la que se repartio el dinero--}}
+                                @if (Auth::user()->worker->departamento->area->area==$pac->area || Auth::user()->hasRole('root'))
+                                    {{--Si no se han realizado movimientos de dinero en el pac--}}
                                     @if ($pac->presupuesto == $pac->disponible)
-                                    <a href="{{route('admin.pacs.edit',$pac->id)}}" class="btn btn-xs btn-success tip"
-                                       data-placement="top" title="Editar"> <i class="fa fa-pencil"></i>
-                                    </a>
-                                    <a href="#!" class="btn btn-xs btn-danger delete tip" data-placement="top" title="Eliminar"
-                                       data-id="{{$pac->id}}"><i class="fa fa-trash-o"></i>
-                                    </a>
+                                        <a href="{{route('admin.pacs.edit',$pac->id)}}"
+                                           class="btn btn-xs btn-success tip"
+                                           data-placement="top" title="Editar"> <i class="fa fa-pencil"></i>
+                                        </a>
+                                        <a href="#!" class="btn btn-xs btn-danger delete tip" data-placement="top"
+                                           title="Eliminar"
+                                           data-id="{{$pac->id}}"><i class="fa fa-trash-o"></i>
+                                        </a>
                                     @endif
                                 @endif
                                 @endpermission
@@ -163,7 +171,7 @@
         $(document).ready(function () {
 
             $(".form_noEnter").keypress(function (e) {
-                if (e.width == 13) {
+                if (e.which == 13) {
                     return false;
                 }
             });
@@ -195,60 +203,60 @@
                         "sortDescending": ": Activar para ordenar descendentemente"
                     }
                 },
-                "footerCallback": function ( row, data, start, end, display ) {
+                "footerCallback": function (row, data, start, end, display) {
                     var api = this.api(), data;
 
                     // formatear los datos para sumar
-                    var intVal = function ( i ) {
-                        return typeof i === 'string' ? i.replace(/[\$,]/g, '')*1 : typeof i === 'number' ? i : 0;
+                    var intVal = function (i) {
+                        return typeof i === 'string' ? i.replace(/[\$,]/g, '') * 1 : typeof i === 'number' ? i : 0;
                     };
 
                     // Total en todas las paginas
-                    total_plan = api.column( 3 ).data().reduce( function (a, b) {
+                    total_plan = api.column(3).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
-                    }, 0 );
-                    total_disp = api.column( 4 ).data().reduce( function (a, b) {
+                    }, 0);
+                    total_disp = api.column(4).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
-                    }, 0 );
+                    }, 0);
 
                     // Total en la pagina actual
-                    pageTotal_plan = api.column(3,{ page: 'current'} ).data().reduce( function (a, b) {
+                    pageTotal_plan = api.column(3, {page: 'current'}).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
-                    }, 0 );
+                    }, 0);
 
-                    pageTotal_disp = api.column(4,{ page: 'current'} ).data().reduce( function (a, b) {
+                    pageTotal_disp = api.column(4, {page: 'current'}).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
-                    }, 0 );
+                    }, 0);
 
                     // actualzar total en el pie de tabla
-                    $( api.column( 3 ).footer() ).html('$'+pageTotal_plan+'<p style="color: #0c199c">'+' ( $'+ total_plan+' )'+'</p>');
-                    $( api.column( 4 ).footer() ).html('$'+pageTotal_disp+'<p style="color: #0c199c">'+' ( $'+ total_disp+' )'+'</p>');
+                    $(api.column(3).footer()).html('$' + pageTotal_plan + '<p style="color: #0c199c">' + ' ( $' + total_plan + ' )' + '</p>');
+                    $(api.column(4).footer()).html('$' + pageTotal_disp + '<p style="color: #0c199c">' + ' ( $' + total_disp + ' )' + '</p>');
                 }
             });
 
-            var table_pac=$("#pac_table").DataTable({
+            var table_pac = $("#pac_table").DataTable({
                 lengthMenu: [[5, 10, -1], [5, 10, 'Todo']],
-                "language":{
-                    "decimal":        "",
-                    "emptyTable":     "No se encontraron datos en la tabla",
-                    "info":           "Mostrando _START_ a _END_ de _TOTAL_ registros",
-                    "infoEmpty":      "Mostrando 0 a 0 de 0 registros",
-                    "infoFiltered":   "(filtrados de un total _MAX_ registros)",
-                    "infoPostFix":    "",
-                    "thousands":      ",",
-                    "lengthMenu":     "Mostrar _MENU_ registros",
+                "language": {
+                    "decimal": "",
+                    "emptyTable": "No se encontraron datos en la tabla",
+                    "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                    "infoEmpty": "Mostrando 0 a 0 de 0 registros",
+                    "infoFiltered": "(filtrados de un total _MAX_ registros)",
+                    "infoPostFix": "",
+                    "thousands": ",",
+                    "lengthMenu": "Mostrar _MENU_ registros",
                     "loadingRecords": "Cargando...",
-                    "processing":     "Procesando...",
-                    "search":         "Buscar:",
-                    "zeroRecords":    "No se encrontraron coincidencias",
+                    "processing": "Procesando...",
+                    "search": "Buscar:",
+                    "zeroRecords": "No se encrontraron coincidencias",
                     "paginate": {
-                        "first":      "Primero",
-                        "last":       "Ultimo",
-                        "next":       "Siguiente",
-                        "previous":   "Anterior"
+                        "first": "Primero",
+                        "last": "Ultimo",
+                        "next": "Siguiente",
+                        "previous": "Anterior"
                     },
                     "aria": {
-                        "sortAscending":  ": Activar para ordenar ascendentemente",
+                        "sortAscending": ": Activar para ordenar ascendentemente",
                         "sortDescending": ": Activar para ordenar descendentemente"
                     },
                     "buttons": {
@@ -278,51 +286,51 @@
                     },
                     'colvis'
                 ],
-                columnDefs: [ {
+                columnDefs: [{
 //                    targets: -1,
                     visible: false
-                } ],
-                "footerCallback": function ( row, data, start, end, display ) {
+                }],
+                "footerCallback": function (row, data, start, end, display) {
                     var api = this.api(), data;
 
                     // formatear los datos para sumar
-                    var intVal = function ( i ) {
-                        return typeof i === 'string' ? i.replace(/[\$,]/g, '')*1 : typeof i === 'number' ? i : 0;
+                    var intVal = function (i) {
+                        return typeof i === 'string' ? i.replace(/[\$,]/g, '') * 1 : typeof i === 'number' ? i : 0;
                     };
 
                     // Total en todas las paginas
-                    total_pre = api.column( 1 ).data().reduce( function (a, b) {
+                    total_pre = api.column(1).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
-                    }, 0 );
-                    total_ejec = api.column( 2 ).data().reduce( function (a, b) {
+                    }, 0);
+                    total_ejec = api.column(2).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
-                    }, 0 );
-                    total_dev = api.column( 3 ).data().reduce( function (a, b) {
+                    }, 0);
+                    total_dev = api.column(3).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
-                    }, 0 );
-                    total_disp = api.column( 4 ).data().reduce( function (a, b) {
+                    }, 0);
+                    total_disp = api.column(4).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
-                    }, 0 );
+                    }, 0);
 
                     // Total en la pagina actual
-                    pageTotal_pre = api.column(1,{ page: 'current'} ).data().reduce( function (a, b) {
+                    pageTotal_pre = api.column(1, {page: 'current'}).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
-                    }, 0 );
-                    pageTotal_ejec = api.column(2,{ page: 'current'} ).data().reduce( function (a, b) {
+                    }, 0);
+                    pageTotal_ejec = api.column(2, {page: 'current'}).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
-                    }, 0 );
-                    pageTotal_dev = api.column(3,{ page: 'current'} ).data().reduce( function (a, b) {
+                    }, 0);
+                    pageTotal_dev = api.column(3, {page: 'current'}).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
-                    }, 0 );
-                    pageTotal_disp = api.column(4,{ page: 'current'} ).data().reduce( function (a, b) {
+                    }, 0);
+                    pageTotal_disp = api.column(4, {page: 'current'}).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
-                    }, 0 );
+                    }, 0);
 
                     // actualzar total en el pie de tabla
-                    $( api.column( 1 ).footer() ).html('$'+pageTotal_pre+'<p style="color: #0c199c">'+' ( $'+ total_pre+' )'+'</p>');
-                    $( api.column( 2 ).footer() ).html('$'+pageTotal_ejec+'<p style="color: #0c199c">'+' ( $'+ total_ejec+' )'+'</p>');
-                    $( api.column( 3 ).footer() ).html('$'+pageTotal_dev+'<p style="color: #0c199c">'+' ( $'+ total_dev+' )'+'</p>');
-                    $( api.column( 4 ).footer() ).html('$'+pageTotal_disp+'<p style="color: #0c199c">'+' ( $'+ total_disp+' )'+'</p>');
+                    $(api.column(1).footer()).html('$' + pageTotal_pre + '<p style="color: #0c199c">' + ' ( $' + total_pre + ' )' + '</p>');
+                    $(api.column(2).footer()).html('$' + pageTotal_ejec + '<p style="color: #0c199c">' + ' ( $' + total_ejec + ' )' + '</p>');
+                    $(api.column(3).footer()).html('$' + pageTotal_dev + '<p style="color: #0c199c">' + ' ( $' + total_dev + ' )' + '</p>');
+                    $(api.column(4).footer()).html('$' + pageTotal_disp + '<p style="color: #0c199c">' + ' ( $' + total_disp + ' )' + '</p>');
                 }
             });
 
@@ -330,24 +338,24 @@
             $("#ai_table").fadeIn();
 
 
-            $('#pac_table .search-filter').each( function () {
+            $('#pac_table .search-filter').each(function () {
                 var title = $(this).text();
-                $(this).html( '<input type="text" class="input-sm" style="width: 80%" placeholder="'+title+'" />' );
-            } );
+                $(this).html('<input type="text" class="input-sm" style="width: 80%" placeholder="' + title + '" />');
+            });
 
             $('#ai_table .search-filter').each(function () {
                 var title = $(this).text();
                 $(this).html('<input type="text" class="input-sm" style="width: 80%;" placeholder="' + title + '" />');
             });
 
-            table_pac.columns().every( function () {
+            table_pac.columns().every(function () {
                 var that = this;
-                $( 'input', this.footer() ).on( 'keyup change', function () {
-                    if ( that.search() !== this.value ) {
-                        that.search( this.value ).draw();
+                $('input', this.footer()).on('keyup change', function () {
+                    if (that.search() !== this.value) {
+                        that.search(this.value).draw();
                     }
-                } );
-            } );
+                });
+            });
 
             table.columns().every(function () {
                 var that = this;
@@ -376,45 +384,45 @@
             }
         });
 
-        $(document).on('click','.delete',function(e){
+        $(document).on('click', '.delete', function (e) {
             e.preventDefault();
-            var row=$(this).parents('tr');
-            var id=$(this).attr('data-id');
-            var form=$("#form-delete")
-            var url=form.attr('action').replace(':ID',id);
-            var data=form.serialize();
+            var row = $(this).parents('tr');
+            var id = $(this).attr('data-id');
+            var form = $("#form-delete")
+            var url = form.attr('action').replace(':ID', id);
+            var data = form.serialize();
             swal({
-                        title: "Confirme para eliminar !",
-                        text: "Se eliminará el pac!. Esta acción no se podrá deshacer!",
-                        type: "info",
-                        showCancelButton: true,
-                        confirmButtonColor: "#DD6B55",
-                        confirmButtonText: "SI!",
-                        cancelButtonText: " NO!",
-                        closeOnConfirm: false,
-                        closeOnCancel: false,
-                        showLoaderOnConfirm: true,
-                    },
-                    function (isConfirm) {
-                        if (isConfirm) {
-                            $.ajax({
-                                url:url,
-                                data:data,
-                                type: 'POST',
-                                success: function (response) {
-                                    swal("Confirmado!", response.message,"success");
-                                    row.fadeOut();
-                                },
-                                error: function (response) {
-                                    row.show();
-                                    swal("ERROR!", response,"error");
-                                }
-                            });
-                        }//isConfirm
-                        else {
-                            swal("Cancelado", "Canceló la acción :)", "error");
-                        }
-                    });
+                    title: "Confirme para eliminar !",
+                    text: "Se eliminará el pac!. Esta acción no se podrá deshacer!",
+                    type: "info",
+                    showCancelButton: true,
+                    confirmButtonColor: "#DD6B55",
+                    confirmButtonText: "SI!",
+                    cancelButtonText: " NO!",
+                    closeOnConfirm: false,
+                    closeOnCancel: false,
+                    showLoaderOnConfirm: true,
+                },
+                function (isConfirm) {
+                    if (isConfirm) {
+                        $.ajax({
+                            url: url,
+                            data: data,
+                            type: 'POST',
+                            success: function (response) {
+                                swal("Confirmado!", response.message, "success");
+                                row.fadeOut();
+                            },
+                            error: function (response) {
+                                row.show();
+                                swal("ERROR!", response, "error");
+                            }
+                        });
+                    }//isConfirm
+                    else {
+                        swal("Cancelado", "Canceló la acción :)", "error");
+                    }
+                });
 
         });
 

@@ -18,7 +18,7 @@ class UserController extends Controller
     {
         $this->middleware('auth');
         $this->middleware(['role:root|administrador|responsable-poa'], ['except' => ['sendNewUserMail', 'getPasswordEdit','postPassword']]);
-        Carbon::setLocale('es');
+        setlocale(LC_TIME, 'es_ES.utf8');
     }
 
     /**

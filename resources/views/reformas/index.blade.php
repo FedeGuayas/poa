@@ -14,18 +14,20 @@
     {!! Form::open(['route'=>'admin.reportes.reformas_select-pdf','method'=>'post','id'=>'imp_reformas_select']) !!}
     <div class="table-responsive">
         <table class="table table-striped table-bordered table-condensed table-hover" id="reformas_table"
-               cellspacing="0" style="display: none;" data-order='[[ 0, "desc" ]]'>
+               cellspacing="0" style="display: none; font-size: 10px;" data-order='[[ 0, "desc" ]]'>
             <thead>
-            <th style="width: 40px;">No.</th>
-            <th style="width: 70px;">Dirección</th>
+            <th style="width: 30px;">No.</th>
+            <th >Dirección</th>
             <th style="width: 70px;">Valor_Origen</th>
-            <th style="width: 90px;">Código</th>
+            <th style="width: 60px;">Mes</th>
+            <th style="width: 70px;">Código</th>
             <th style="width: 70px;">Tipo</th>
             <th>Nomb. Item</th>
-            <th style="width: 70px;">Mes</th>
             <th style="width: 70px;">Valor_Destino</th>
+            <th>Monto/Mes</th>
+            <th style="width: 70px;">Cod Destino</th>
             <th>Ejecutor</th>
-            <th style="width: 60px;">Estado</th>
+            <th style="width: 50px;">Estado</th>
             <th style="width: 120px;">Acción</th>
             <th>
                 {!! Form::checkbox('imp_all',null,false,['id'=>'imp_all']) !!}
@@ -43,11 +45,14 @@
                 <th class="search-filter">filtrar</th>
                 <th></th>
                 <th></th>
+                <th class="search-filter"></th>
+                <th></th>
                 <th class="search-filter">filtrar</th>
                 <th></th>
                 <th>
                     @permission('imprimir-reformas')
-                    {!! Form::button('<i class="fa fa fa-file-pdf-o" aria-hidden="true"></i>',['class'=>'btn-xs btn-primary tip','data-placement'=>'top', 'title'=>'Imprimir Seleccionados','type'=>'submit','id'=>'imp_all','target'=>'_blank']) !!}
+                    {{--{!! Form::button('<i class="fa fa fa-file-pdf-o" aria-hidden="true"></i>',['class'=>'btn-xs btn-danger tip','data-placement'=>'top', 'title'=>'Imprimir PDF','type'=>'submit','id'=>'imp_all_pdf','target'=>'_blank','name'=>'imp_all_pdf','value'=>'imp_all_pdf']) !!}--}}
+                    {!! Form::button('<i class="fa fa fa-file-excel-o" aria-hidden="true"></i>',['class'=>'btn-xs btn-success tip','data-placement'=>'top', 'title'=>'Imprimir Excel','type'=>'submit','id'=>'imp_all_excel','target'=>'_blank','name'=>'imp_all_excel','value'=>'imp_all_excel']) !!}
                     @endpermission
                 </th>
             </tr>
@@ -62,11 +67,21 @@
                     <td>{{$reforma->id}}</td>
                     <td>{{$reforma->area}}</td>
                     <td>$ {{$reforma->monto_orig}}</td>
+                    <td>{{$reforma->mes}}</td>
                     <td>{{$reforma->cod_programa.'-'.$reforma->cod_actividad.'-'.$reforma->cod_item}}</td>
                     <td>{{$reforma->tipo_reforma}}</td>
                     <td>{{$reforma->item}}</td>
-                    <td>{{$reforma->mes}}</td>
                     <td>${{$reforma->total_destino}}</td>
+                    <td>
+                        @foreach($reforma->pac_destino as $pd)
+                            ${{$pd->valor_dest.' / '.$pd->pac->meses->month}}<br/>
+                        @endforeach
+                    </td>
+                    <td>
+                        @foreach($reforma->pac_destino as $pd)
+                            {{$pd->pac->area_item->item->cod_programa.'-'.$pd->pac->area_item->item->cod_actividad.'-'.$pd->pac->area_item->item->cod_item}}<br/>
+                        @endforeach
+                    </td>
                     <td>{{$reforma->nombres.' '.$reforma->apellidos}} </td>
                     <td>
                         @if ($reforma->estado==\App\Reforma::REFORMA_PENDIENTE)
@@ -90,12 +105,12 @@
                            {{--data-toggle="modal" data-target="#show-modal" --}}
                            onclick="showDetalles({{$reforma->id}})"><i class="fa fa-eye"></i>
                         </a>
-                        @permission('imprimir-reformas')
-                        <a href="{{route('admin.reportes.reforma-pdf',$reforma->id)}}"
-                           class="btn btn-xs btn-warning tip" data-placement="top" title="Imprimir" target="_blank">
-                            <i class="fa fa-file-pdf-o"></i>
-                        </a>
-                        @endpermission
+                        {{--@permission('imprimir-reformas')--}}
+                        {{--<a href="{{route('admin.reportes.reforma-pdf',$reforma->id)}}"--}}
+                           {{--class="btn btn-xs btn-warning tip" data-placement="top" title="Imprimir" target="_blank">--}}
+                            {{--<i class="fa fa-file-pdf-o"></i>--}}
+                        {{--</a>--}}
+                        {{--@endpermission--}}
                         {{--<a href="#!" class="btn btn-xs btn-success tip" data-placement="top" title="Editar">--}}
                             {{--<i class="fa fa-edit"></i>--}}
                         {{--</a>--}}
@@ -133,7 +148,7 @@
         $(document).ready(function () {
 
             $(".form_noEnter").keypress(function (e) {
-                if (e.width == 13) {
+                if (e.which === 13) {
                     return false;
                 }
             });
@@ -296,7 +311,6 @@
                     list.html(response);
                 },
                 error: function (response) {
-                    console.log(response);
                 }
             });
         };

@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Extra extends Model
 {
     protected $fillable = [
-        'area_item_id','item_id','area_id','monto','mes'
+        'item_id','area_id','monto','mes'
     ];
 
     public function item()
@@ -15,14 +15,14 @@ class Extra extends Model
         return $this->belongsTo('App\Item');
     }
 
-    public function area_item()
-    {
-        return $this->belongsTo('App\AreaItem');
-    }
-
     public function area()
     {
         return $this->belongsTo('App\Area');
+    }
+
+    public function month()
+    {
+        return $this->belongsTo('App\Month','mes','id');
     }
         
 }

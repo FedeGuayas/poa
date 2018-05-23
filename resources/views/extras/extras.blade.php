@@ -5,14 +5,9 @@
 
 @section('content')
     @include('alert.alert')
+    @include('alert.alert_json')
 
-    {{--{!! Form::open(['route'=>'importPOA','method'=>'POST','class'=>'form-horizontal', 'files'=>true, 'id'=>'form_carga']) !!}--}}
-
-    {{--<div class="material-switch pull-right" data-toggle="tooltip" data-placement="left" title="Reiniciar">--}}
-    {{--{!! Form::checkbox('reset_ejercicio',null,false,['id'=>'reset_ejercicio']) !!}--}}
-    {{--<label for="reset_ejercicio" class="label-danger"></label>--}}
-    {{--</div>--}}
-    {!! Form::open(['route'=>'admin.ingresos.store','method'=>'post']) !!}
+    {!! Form::open(['route'=>'admin.ingresos.store','method'=>'post','class'=>'form_noEnter']) !!}
     <div class="row">
         <div class="col-md-12">
             <div class="panel panel-info">
@@ -117,7 +112,6 @@
                         <div class="col-md-6" id="enviar" hidden>
                             <div class="form-group">
                                 {!! Form::button('<i class="fa fa-floppy-o" aria-hidden="true"></i> Guardar',['class'=>'btn btn-sm btn-success tip guardar','data-placement'=>'top', 'title'=>'Guardar', 'type'=>'submit']) !!}
-                                {!! Form::button('<i class="fa fa-ban" aria-hidden="true"></i> Cancelar',['class'=>'btn btn-sm btn-danger tip','data-placement'=>'top', 'type'=>'reset', 'title'=>'Cancelar']) !!}
                             </div>
                         </div>
                     </div>
@@ -146,7 +140,7 @@
 @endsection
 
 @section('scripts')
-
+    <script src="{{asset('plugins/jquery-bootstrap-waitingFor/bootstrap-waitingfor.js')}}"></script>
     <script>
 
         $(document).on('mouseover', '.tip', function (event) {
@@ -159,6 +153,12 @@
         });
 
         $(document).ready(function () {
+
+            $(".form_noEnter").keypress(function (e) {
+                if (e.which === 13) {
+                    return false;
+                }
+            });
 
             $("#programa").change(function () {
                 var id = this.value;
@@ -190,7 +190,6 @@
                         load.addClass('hidden');
                     },
                     error: function (response) {
-                        //console.log(response);
                         load.addClass('hidden');
                         act.find("option:gt(0)").remove();
                         item.find("option:gt(0)").remove();
@@ -229,7 +228,6 @@
                         load.addClass('hidden');
                     },
                     error: function (response) {
-                        //console.log(response);
                         load.addClass('hidden');
                         item.find("option:gt(0)").remove();
                         item.selectpicker("refresh");
@@ -256,7 +254,6 @@
                         cod_item.val(response.cod_programa + '-' + response.cod_actividad + '-' + response.cod_item);
                     },
                     error: function (response) {
-                        //console.log(response);
                     }
                 });
             });
@@ -282,7 +279,6 @@
                         desglose_item.html(response);
                     },
                     error: function (response) {
-                        console.log(response);
                     }
                 });
             });
@@ -300,24 +296,76 @@
             }
         });
 
-        $(document).ready(function () {
-            $("#agregar").click(function () {
-                agregar();
-            })
+
+        $("#agregar").on("click keypress", function (e) {
+            agregar();
         });
+
+        //enviar form del modal de inc pac
+        $('form.form_noEnter').on('submit', function (event) {
+            event.preventDefault();
+            var form = $(this);
+            var token = $("input[name=_token]").val();
+            var formData = form.serialize();
+            var formAction = form.attr('action'); // form handler url, route
+            var formMethod = form.attr('method'); // GET, POST
+            waitingDialog.show('Guardando ...', {
+                headerText: 'Espere mientras e procesa la información...',
+                headerSize: 3,
+                dialogSize: 'm',
+                progressType: 'primary'
+            });
+            $.ajax({
+                url: formAction,
+                data: formData,
+                type: formMethod,
+                headers: {'X-CSRF-TOKEN': token},
+//               contentType: 'application/x-www-form-urlencoded',
+                dataType: 'json',
+                success: function (response) {
+                    if (response.message_error) {
+                        swal('ERROR', response.message_error, 'error');
+                        waitingDialog.hide();
+                    } else {
+                        waitingDialog.hide();
+                        swal('', response.message, 'success');
+                        $(".sa-confirm-button-container .confirm").on('click', function () {
+                            window.setTimeout(function () {location.reload()}, 1)
+                        });
+                    }
+                },
+                error: function (response) {
+                    waitingDialog.hide('', {
+                        onHide: swal('Error!', 'Se encontraron algunos errores, verifique los datos del formulario', 'error')
+                    });
+//                    if (response.status === 422) {
+                        var data = response.responseJSON.errors;
+                        var error='';
+                        $.each(data, function (i) {
+                            error += data[i] + '<br>';
+                        });
+                        showError(error);
+                    }
+//                }
+            });
+            return false; // evitar se envie el form
+        });
+
+
         var cont = 0, tot = 0, resto = 0, subtotal = [];
         function agregar() {
-            var item_id = $("#item").val();
-            var area_id = $("#area").val();
+            var item_id = $("#item").val(); //extras=>item_id
+            var area_id = $("#area").val(); //extras=>area_id
             var area = $("#area option:selected").text();
-            var mes = $("#mes").val();
+            var mes = $("#mes").val(); //extras=>mes=cod_mes
             var mes_mes = $("#mes option:selected").text();
             var valor = parseFloat($("#valor").val());
             //var disponible = parseFloat($("#disponible").val());
-            var detalles = $("#detalles");
-            if (area_id != '' && mes != '' && item_id != '' && valor > 0) {
+            var detalles = $("#detalles"); //tabla
+//            if (area_id != '' && mes != '' && item_id != '' && valor > 0) {
+            if (1!= 0) {
                 subtotal[cont] = valor;
-                tot = Math.round((tot + subtotal[cont])*100)/100;
+                tot = Math.round((tot + subtotal[cont]) * 100) / 100;
 
                 var fila = '<tr class="selected" id="fila' + cont + '"><td><button class="btn btn-sm btn-danger" title="Eliminar" onclick="eliminar(' + cont + ');"><i class="fa fa-trash-o" aria-hidden="true"></i></button></td><td><input type="hidden" name="area_id[]" value="' + area_id + '">' + area + '</td><td><input type="hidden" name="mes[]" value="' + mes + '">' + mes_mes + '</td><td style="color: #5cb85c"><input type="hidden" name="subtotal_id[]" value="' + subtotal[cont] + '"><b>$ ' + subtotal[cont].toFixed(2) + '</b></td></tr>';
                 detalles.append(fila);
@@ -342,10 +390,15 @@
             }
         }
         function eliminar(index) {
-            tot = Math.round((tot - subtotal[index])*100)/100;
+            tot = Math.round((tot - subtotal[index]) * 100) / 100;
             $("#total").html("$ " + tot.toFixed(2));
             $("#fila" + index).remove();
             evaluar();
+        }
+
+        function showError(errors){
+            $("#msj-error").html(errors);
+            $("#message-danger").fadeIn();
         }
 
     </script>

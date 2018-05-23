@@ -6,16 +6,26 @@
     @include('alert.alert_json')
     @include('alert.alert')
 
-    {!! Form::open(['route'=>['admin.historico.cierre'],'method'=>'GET','class'=>'form_noEnter', 'id'=>'form_cierre']) !!}
-    <div class="row">
-        <div class="col-lg-6">
-            <div class="form-inline">
-                <div class="form-group">
-                    {!! Form::label('mes','',['class'=>'sr-only']) !!}
-                    {!! Form::select('mes',$list_meses,$mes,['class'=>'form-control selectpicker','placeholder'=>'Meses...','id'=>'mes']) !!}
-                </div>
-                {!! Form::button('<i class="fa fa-search" aria-hidden="true"></i>',['class'=>'btn btn-primary tip','data-placement'=>'top', 'title'=>'Filtrar','id'=>'buscar', 'type'=>'submit']) !!}
 
+    <div class="alert alert-danger" id="warning-alert" role="alert"
+         style="display: none; position: fixed; right: 5%; margin-left: 5%; border: 1px solid; z-index: 9999; ">
+        <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
+            <span aria-hidden="true">&times;</span>
+        </button>
+        <strong>Atención! </strong>
+        Antes de hacer el cierre verifique que tiene cargado el esigef correspondiente al mes que desea cerrar.
+    </div>
+
+
+    <div class="row">
+        <div class="col-lg-3">
+            <div class="form-inline">
+                <div class="form-group col-lg-10">
+                    {!! Form::select('mes',$list_meses,$mes,['class'=>'form-control selectpicker','placeholder'=>'Seleccione ...','id'=>'mes']) !!}
+                </div>
+                @permission('hacer-cierre')
+                {!! Form::button('<i class="fa fa-clone" aria-hidden="true"></i>',['class'=>'btn btn-danger tip','data-placement'=>'top', 'title'=>'Hacer Cierre','id'=>'cierre']) !!}
+                @endpermission
             </div>
         </div>
     </div>
@@ -24,46 +34,32 @@
     <div class="col-md-12">
 
         <div class="panel panel-success">
-            <div class="panel-heading clearfix">Cierre - {{$list_meses[$mes]}}.
+            <div class="panel-heading clearfix">Información de Esigef para cierre.
                 <a href="#!" class="btn-collapse pull-right" data-toggle="collapse" data-target="#resumen"
                    aria-expanded="false" aria-controls="resumen"><i class="fa fa-minus"></i></a>
             </div>
             <div class="panel-body collapse in" id="resumen">
                 <div class="table-responsive">
-                    @permission('hacer-cierre')
-                    <button type="button" class="btn btn-danger tip pull-right" data-placement="top"
-                            title="Hacer Cierre" id="cierre"><i class="fa fa-clone" aria-hidden="true"></i> Cierre
-                    </button>
-                    @endpermission
+
                     <table class="table table-striped table-bordered table-condensed table-hover" id="resumen_table"
-                           cellspacing="0" style="display: none; font-size: 11px;">
-                        {{--<caption>--}}
-                        {{--@if ($mes)--}}
-                        {{--<a href="#!" class="btn btn-xs btn-default tip" data-placement="top" title="Imprimir" target="_blank">--}}
-                        {{--<i class="fa fa-2x fa-print"></i>--}}
-                        {{--</a>--}}
-                        {{--@endif--}}
-                        {{--</caption>--}}
+                           cellspacing="0" style="display: none; font-size: 11px;" data-order='[[ 1, "asc" ]]'>
                         <thead>
                         <tr>
-                            <th>Ejer.</th>
+                            <th style="width: 65px">ItemID</th>
                             <th style="width: 65px">Código</th>
                             <th>Act.</th>
                             <th>Item</th>
-                            <th style="width: 50px">Dirección</th>
-
-                            <th>Plan</th>
-                            <th>Extras</th>
-                            <th>Dev_ESIGEF</th>
                             <th>Codif_ESIGEF</th>
+                            <th>Dev_ESIGEF</th>
+                            <th>POA Plan.</th>
+                            <th>POA Disp.</th>
                         </tr>
                         </thead>
                         <tfoot>
                         <tr>
-                            <th></th>
+                            <th class="search-filter"></th>
                             <th class="search-filter">filtrar</th>
                             <th></th>
-                            <th class="search-filter">filtrar</th>
                             <th class="search-filter">filtrar</th>
                             <th></th>
                             <th></th>
@@ -72,17 +68,20 @@
                         </tr>
                         </tfoot>
                         <tbody>
-                        @foreach($cierre_mensual as $res)
+                        @foreach($esigef_items as $res)
                             <tr>
-                                <td>{{$res->ejercicio}}</td>
-                                <td>{{$res->cod_programa.'-'.$res->cod_actividad.'-'.$res->cod_item}}</td>
+                                <td>{{$res->itemID}}</td>
+                                <td>{{$res->esigefPrograma.'-'.$res->esigefActividad.'-'.$res->esigefItem}}</td>
                                 <td>{{$res->actividad}}</td>
                                 <td>{{$res->item}}</td>
-                                <td>{{$res->area}}</td>
-                                <td>$ {{number_format($res->planificado,2,'.','')}}</td>
-                                <td>$ {{number_format($res->extra,2,'.','')}} </td>
-                                <td>$ {{number_format(($res->dev_esigef),2,'.','')}} </td>
-                                <td>$ {{number_format(($res->cod_esigef),2,'.','')}} </td>
+                                <td>
+                                    $ {{number_format(($res->esigefCodificado),2,'.','')}} </td>{{--Codificado de esigef--}}
+                                <td>
+                                    $ {{number_format(($res->esigefDevengado),2,'.','')}} </td>{{--de esigef, con los ingresos extras--}}
+                                <td>
+                                    $ {{number_format(($res->itemPresupuesto),2,'.','')}} </td>{{--Items, Plan inicial --}}
+                                <td>
+                                    $ {{number_format(($res->itemDisponible),2,'.','')}} </td>{{--Items que no se han repartido por areas--}}
                             </tr>
                         @endforeach
                         </tbody>
@@ -94,7 +93,7 @@
     </div>{{--./col-md-12--}}
 
     <input type="hidden" name="_token" value="{{ csrf_token() }}">
-    {!! Form::close() !!}
+    {{--{!! Form::close() !!}--}}
 
 
 @endsection
@@ -107,9 +106,14 @@
         $(document).ready(function () {
 
             $(".form_noEnter").keypress(function (e) {
-                if (e.width == 13) {
+                if (e.which === 13) {
                     return false;
                 }
+            });
+
+            $("#warning-alert").fadeIn(2000).fadeTo(3000, 0.5).slideUp(2000, function () {
+                //           $(this).slideUp(5000);
+                $(this).remove();
             });
 
             var table = $("#resumen_table").DataTable({
@@ -158,43 +162,45 @@
                     // formatear los datos para sumar
                     var intVal = function (i) {
                         return typeof i === 'string' ?
-                        i.replace(/[\$,]/g, '') * 1 :
-                                typeof i === 'number' ?
-                                        i : 0;
+                            i.replace(/[\$,]/g, '') * 1 :
+                            typeof i === 'number' ?
+                                i : 0;
                     };
                     // Total en todas las paginas
-                    total_plan = api.column(5).data().reduce(function (a, b) {
+                    total_codificado = api.column(4).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
-                    total_ext = api.column(6).data().reduce(function (a, b) {
+                    total_devengado = api.column(5).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
-                    total_devengado = api.column(7).data().reduce(function (a, b) {
+                    total_plan = api.column(6).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
-                    total_codificado = api.column(8).data().reduce(function (a, b) {
+                    total_disp = api.column(7).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
 
+
                     // Total en la pagina actual
-                    pageTotal_plan = api.column(5, {page: 'current'}).data().reduce(function (a, b) {
+                    pageTotal_cod = api.column(4, {page: 'current'}).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
-                    pageTotal_ext = api.column(6, {page: 'current'}).data().reduce(function (a, b) {
+                    pageTotal_dev = api.column(5, {page: 'current'}).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
-                    pageTotal_dev = api.column(7, {page: 'current'}).data().reduce(function (a, b) {
+                    pageTotal_plan = api.column(7, {page: 'current'}).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
-                    pageTotal_cod = api.column(8, {page: 'current'}).data().reduce(function (a, b) {
+                    pageTotal_disp = api.column(7, {page: 'current'}).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
 
                     // actualzar total en el pie de tabla
-                    $(api.column(5).footer()).html('$' + pageTotal_plan + '<p style="color: #0c199c">' + ' ( $' + total_plan + ' )' + '</p>');
-                    $(api.column(6).footer()).html('$' + pageTotal_ext + '<p style="color: #0c199c">' + ' ( $' + total_ext + ' )' + '</p>');
-                    $(api.column(7).footer()).html('$' + pageTotal_dev + '<p style="color: #0c199c">' + ' ( $' + total_devengado + ' )' + '</p>');
-                    $(api.column(8).footer()).html('$' + pageTotal_cod + '<p style="color: #0c199c">' + ' ( $' + total_codificado + ' )' + '</p>');
+                    $(api.column(4).footer()).html('$' + pageTotal_cod + '<p style="color: #0c199c">' + ' ( $' + total_codificado + ' )' + '</p>');
+                    $(api.column(5).footer()).html('$' + pageTotal_dev + '<p style="color: #0c199c">' + ' ( $' + total_devengado + ' )' + '</p>');
+                    $(api.column(6).footer()).html('$' + pageTotal_plan + '<p style="color: #0c199c">' + ' ( $' + total_plan + ' )' + '</p>');
+                    $(api.column(7).footer()).html('$' + pageTotal_disp + '<p style="color: #0c199c">' + ' ( $' + total_disp + ' )' + '</p>');
+
 
                 },
                 lengthChange: true,
@@ -219,7 +225,7 @@
 //                    .appendTo( $('.col-sm-6:eq(0)', table.table().container() ) );
 
             table.buttons().container()
-                    .appendTo('#resumen_table_wrapper .col-md-6:eq(0)');
+                .appendTo('#resumen_table_wrapper .col-md-6:eq(0)');
 
             $("#resumen_table").fadeIn();
 
@@ -238,10 +244,10 @@
             });
 
             $("#mes").on('change', function () {
-                if ($(this).val() == '' || $(this).val() == 'placeholder') {
+                if ($(this).val() === '' || $(this).val() === 'placeholder') {
                     $('#cierre').prop('disabled', true);
                 } else  $('#cierre').prop('disabled', false);
-
+//                var mes=$( "#mes option:selected" ).text();
             });
 
             $("#cierre").on('click', function () {
@@ -259,13 +265,14 @@
             var token = $("input[name=_token]").val();
             var route = "{{route('admin.historico.store')}}";
             var mes = $("#mes").val();
+            var mes_name = $("#mes option:selected").text();
             var data = {
                 mes: mes
             };
-            if (mes != '' ){
+            if (mes != '') {
                 swal({
                     title: "",
-                    text: "Se realizará el cierre del mes seleccionado!, seguro desea continuar?",
+                    text: "Se realizará el cierre del mes de " + mes_name + " !, seguro desea continuar?",
                     type: "warning",
                     showCancelButton: true,
                     confirmButtonColor: "#DD6B55",
@@ -298,9 +305,7 @@
             } else {
                 swal("", "Debe seleccionar el mes para realizar el cierre", "error");
             }
-
         }
-
 
     </script>
 

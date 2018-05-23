@@ -84,7 +84,7 @@
         </tr>
         <tr>
             <td><b>DE:</b></td>
-            <td><b>{{strtoupper($jefe_area->tratamiento)}}.{{$jefe_area->nombres.' '.$jefe_area->apellidos}}</b>
+            <td><b>{{strtoupper($jefe_area->tratamiento)}}. {{$jefe_area->nombres.' '.$jefe_area->apellidos}}</b>
                 / {{$jefe_area->cargo}}</td>
         </tr>
         <tr>

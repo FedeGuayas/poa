@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 
 use DB;
 use App\Http\Requests;
+use Illuminate\Support\Facades\Validator;
+use Psy\Util\Json;
 
 class ExtraController extends Controller
 {
@@ -59,43 +61,71 @@ class ExtraController extends Controller
      */
     public function store(Request $request)
     {
+        $rules = [
+            'area_id.*' => 'required',
+            'mes.*' => 'required',
+            'subtotal_id.*'=> 'required',
+            'item'=>'required'
+        ];
+
+        $mensajes = [
+            'area_id.required' => 'El área es requerida',
+            'mes.required' => 'El mes es requerido',
+            'subtotal_id.required' => 'El monto es requerido',
+            'item.required' => 'No se encontró el item',
+        ];
+
+        $validator = Validator::make($request->all(), $rules, $mensajes);
+
+        if ($validator->fails()) {
+            if ($request->ajax()) {
+                return response()->json(['errors'=>$validator->messages()], 422);
+            } else {
+                return back()->withErrors($validator);
+            }
+        }
 
         try {
             DB::beginTransaction();
             $item = Item::where('id', $request->input('item'))->first();
-            $areas = $request->input('area_id');
-            $meses = $request->input('mes');
-            $montos = $request->input('subtotal_id');
+            $areas = $request->input('area_id'); //arreglo
+            $meses = $request->input('mes');//arreglo
+            $montos = $request->input('subtotal_id');//arreglo
 
             $cont = 0;
+            $insert = [];
             while ($cont < count($areas)) {
 
-                $area_item=AreaItem::where('item_id',$item->id)->where('area_id',$areas[$cont])->where('mes',$meses[$cont])->first();
-
-//                $post->comments()->saveMany([
-//                    new App\Comment(['message' => 'A new comment.']),
-//                    new App\Comment(['message' => 'Another comment.']),
-//                ]);
-                if ($area_item){
-                    $area_item->extras()->create([
-                            "area_id" =>$areas[$cont],
-                            'monto' => $montos[$cont],
-                            'mes' => $meses[$cont],
-                            'item_id' => $item->id]
-                    );
-                }else{
-                    return redirect()->route('admin.ingresos.index')->with('message_danger', 'Error no existe el POA al que esta agregando ingresos');
+                if ($areas[$cont] != '' && $meses[$cont] != '' && $montos[$cont] > 0) {
+                    $insert[] = [
+                        "area_id" =>$areas[$cont],
+                        'monto' => $montos[$cont],
+                        'mes' => $meses[$cont],
+                        'item_id' => $item->id
+                    ];
                 }
+
                 $cont++;
+            }
+            if (!empty($insert)) {
+                DB::table('extras')->insert($insert);
             }
 
             DB::commit();
-            return redirect()->route('admin.ingresos.index')->with('message', 'Ingresos guardados');
+            $message='Ingresos extras guardados correctamente.';
+            if ($request->ajax()) {
+                return response()->json(['message'=>$message], 200);
+            } else {
+                return redirect()->route('admin.ingresos.index')->with('message', 'Ingresos extras guardados');
+            }
         } catch (\Exception $e) {
             DB::rollback();
-            return redirect()->route('admin.ingresos.index')->with('message_danger', 'Error no se guardaron los registros');
-//                return redirect()->route('poaFDG')->with('message_danger',$e->getMessage());
-//                return response()->json([ "response" => $e->getMessage(),"tipo" => "error"]);
+            $message=$e->getMessage();
+            if ($request->ajax()) {
+                return response()->json(['message_error'=>'Error crítico: '.$message.'']);
+            } else {
+                return redirect()->route('admin.ingresos.index')->with('message_danger', $message);
+            }
         }
     }
 
@@ -144,17 +174,23 @@ class ExtraController extends Controller
         //
     }
 
+    /**
+     * Muestra el resumen de ingresos extras para el area seleccionada, no importa el mes que sea
+     * @param Request $request
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     */
     public function loadExtra(Request $request)
     {
         $area_id = $request->input('area_id');
         $item_id = $request->input('item_id');
         $extras = DB::table('extras as e')
             ->join('months as m','m.cod','=','e.mes')
-            ->select('m.month as mes','area_item_id',DB::raw('sum(monto) monto'))
+            ->select('m.month','item_id','area_id','mes',DB::raw('sum(monto) monto'))
             ->where('area_id', $area_id)
             ->where('item_id', $item_id)
-            ->groupBy('area_item_id')
+            ->groupBy('item_id','area_id','mes')
             ->get();
+
         $total = 0;
         foreach ($extras as $ex) {
             $total = $total + $ex->monto;

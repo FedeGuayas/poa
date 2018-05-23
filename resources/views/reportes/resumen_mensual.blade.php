@@ -5,25 +5,12 @@
 @section('content')
     @include('alert.alert_json')
     @include('alert.alert')
-    {!! Form::open(['route'=>['admin.reportes.resumen_mensual'],'method'=>'GET','class'=>'form_noEnter']) !!}
-    <div class="row">
-        <div class="col-lg-2">
-            <div class="form-group">
-                {!! Form::label('mes','',['class'=>'sr-only']) !!}
-                {!! Form::select('mes',$list_meses,$mes,['class'=>'form-control selectpicker','placeholder'=>'Meses...','id'=>'mes']) !!}
-            </div>
-        </div>
-        <div class="col-lg-1">
-            {!! Form::button('<i class="fa fa-search" aria-hidden="true"></i>',['class'=>'btn btn-primary tip pull-right','data-placement'=>'top', 'title'=>'Filtrar','id'=>'buscar', 'type'=>'submit']) !!}
-        </div>
-    </div>
-    {!! Form::close() !!}
 
-    <hr>
+
     <div class="col-md-12">
 
         <div class="panel panel-success">
-            <div class="panel-heading clearfix">Resumen - {{$list_meses[$mes]}}. Planificado FDG VS Devengado ESIGEF
+            <div class="panel-heading clearfix">Resumen actual. Planificado FDG VS Devengado ESIGEF
                 <a href="#!" class="btn-collapse pull-right" data-toggle="collapse" data-target="#resumen"
                    aria-expanded="false" aria-controls="resumen"><i class="fa fa-minus"></i></a>
             </div>
@@ -31,13 +18,6 @@
                 <div class="table-responsive">
                     <table class="table table-striped table-bordered table-condensed table-hover" id="resumen_table"
                            cellspacing="0" style="display: none;">
-                        {{--<caption>--}}
-                        {{--@if ($mes)--}}
-                        {{--<a href="#!" class="btn btn-xs btn-default tip" data-placement="top" title="Imprimir" target="_blank">--}}
-                        {{--<i class="fa fa-2x fa-print"></i>--}}
-                        {{--</a>--}}
-                        {{--@endif--}}
-                        {{--</caption>--}}
                         <thead>
                         <tr>
                             <th>Dirección</th>
@@ -97,37 +77,59 @@
             </div>
         </div>{{--./panel-success--}}
 
+        <hr>
+
+        {!! Form::open(['route'=>['admin.reportes.resumen_mensual'],'method'=>'GET','class'=>'form_noEnter']) !!}
+        <div class="row">
+            <div class="col-lg-2">
+                <div class="form-group">
+                    {!! Form::label('mes','',['class'=>'sr-only']) !!}
+                    {!! Form::select('mes',$list_meses,$mes_cod,['class'=>'form-control selectpicker','placeholder'=>'Meses...','id'=>'mes']) !!}
+                </div>
+            </div>
+            <div class="col-lg-1">
+                {!! Form::button('<i class="fa fa-search" aria-hidden="true"></i>',['class'=>'btn btn-primary tip pull-right','data-placement'=>'top', 'title'=>'Filtrar','id'=>'buscar', 'type'=>'submit']) !!}
+            </div>
+        </div>
+        {!! Form::close() !!}
 
         <div class="panel panel-info">
-            <div class="panel-heading clearfix">Info del PAC
+            <div class="panel-heading clearfix">Información de Ejecución de Procesos en
+                "{{$mes_cod!='' ? $mes : 'Seleccione el mes'}}"
                 <a href="#!" class="btn-collapse pull-right" data-toggle="collapse" data-target="#resumen2"
                    aria-expanded="false" aria-controls="resumen2"><i class="fa fa-minus"></i></a>
             </div>
             <div class="panel-body collapse in" id="resumen2">
                 <div class="table-responsive">
                     <table class="table table-striped table-bordered table-condensed table-hover" id="resumen2_table"
-                           cellspacing="0" style="display: none;">
+                           cellspacing="0" style="display: none; font-size: 11px;">
                         <thead>
-                        <th style="width: 80px">Dirección</th>
-                        <th style="width: 100px">Código</th>
-                        <th>Item</th>
-                        <th>Ejecutado</th>
-                        <th>Devengado</th>
-                        <th>Disponible</th>
-                        <th>Responsable</th>
-                        <th>Procedimiento</th>
-                        <th>Concepto</th>
+                        <tr>
+                            <th style="width: 80px">Dirección</th>
+                            <th style="width: 100px">Código</th>
+                            <th>Item</th>
+                            <th>Presupuesto</th>
+                            <th>Ejecutado</th>
+                            <th>Devengado</th>
+                            <th>Disponible</th>
+                            <th>Responsable</th>
+                            <th>Procedimiento</th>
+                            <th>Concepto</th>
+                        </tr>
                         </thead>
                         <tfoot>
-                        <th class="search-filter">filtrar</th>
-                        <th class="search-filter">filtrar</th>
-                        <th class="search-filter">filtrar</th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th class="search-filter">filtrar</th>
-                        <th class="search-filter">filtrar</th>
-                        <th class="search-filter">filtrar</th>
+                        <tr>
+                            <th class="search-filter">filtrar</th>
+                            <th class="search-filter">filtrar</th>
+                            <th class="search-filter">filtrar</th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th class="search-filter">filtrar</th>
+                            <th class="search-filter">filtrar</th>
+                            <th class="search-filter">filtrar</th>
+                        </tr>
                         </tfoot>
                         <tbody>
                         @foreach($devengado_pacs as $pacs)
@@ -136,17 +138,18 @@
 
                             @if (  (Auth::user()->worker->departamento->area_id==$pacs->area_trabajador && (Auth::user()->hasRole('analista') || Auth::user()->hasRole('responsable-poa') )) || (Auth::user()->hasRole('root') || Auth::user()->hasRole('administrador')))
                                 <tr>
-                                <td>{{$pacs->area}}</td>
-                                <td>{{$pacs->cod_programa.'-'.$pacs->cod_actividad.'-'.$pacs->cod_item}}</td>
-                                <td>{{$pacs->item}}</td>
-                                <td>$ {{number_format($pacs->comprometido,2,'.','')}}</td>
-                                <td>$ {{number_format($pacs->devengado,2,'.','')}}</td>
-                                <td>$ {{number_format($pacs->disponible,2,'.','')}}</td>
-                                <td>{{$pacs->nombres}} {{$pacs->apellidos}}</td>
-                                <td>{{$pacs->procedimiento}}</td>
-                                <td>{{$pacs->concepto}}</td>
-                            </tr>
-                                @endif
+                                    <td>{{$pacs->area}}</td>
+                                    <td>{{$pacs->cod_programa.'-'.$pacs->cod_actividad.'-'.$pacs->cod_item}}</td>
+                                    <td>{{$pacs->item}}</td>
+                                    <td>$ {{number_format($pacs->presupuesto,2,'.','')}}</td>
+                                    <td>$ {{number_format($pacs->comprometido,2,'.','')}}</td>
+                                    <td>$ {{number_format($pacs->devengado,2,'.','')}}</td>
+                                    <td>$ {{number_format($pacs->disponible,2,'.','')}}</td>
+                                    <td>{{$pacs->nombres}} {{$pacs->apellidos}}</td>
+                                    <td>{{$pacs->procedimiento}}</td>
+                                    <td>{{$pacs->concepto}}</td>
+                                </tr>
+                            @endif
                         @endforeach
                         </tbody>
                         {{--<tr>--}}
@@ -184,7 +187,7 @@
         $(document).ready(function () {
 
             $(".form_noEnter").keypress(function (e) {
-                if (e.width == 13) {
+                if (e.which === 13) {
                     return false;
                 }
             });
@@ -361,32 +364,39 @@
                                 i : 0;
                     };
                     // Total en todas las paginas
-                    total_ejecutado = api.column(3).data().reduce(function (a, b) {
+                    total_presupuesto = api.column(3).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
-                    total_devengado = api.column(4).data().reduce(function (a, b) {
+                    total_ejecutado = api.column(4).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
-                    total_disponible = api.column(5).data().reduce(function (a, b) {
+                    total_devengado = api.column(5).data().reduce(function (a, b) {
+                        return (intVal(a) + intVal(b)).toFixed(2);
+                    }, 0);
+                    total_disponible = api.column(6).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
 
 
                     // Total en la pagina actual
-                    pageTotal_eje = api.column(3, {page: 'current'}).data().reduce(function (a, b) {
+                    pageTotal_pre = api.column(3, {page: 'current'}).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
-                    pageTotal_dev = api.column(4, {page: 'current'}).data().reduce(function (a, b) {
+                    pageTotal_eje = api.column(4, {page: 'current'}).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
-                    pageTotal_disp = api.column(5, {page: 'current'}).data().reduce(function (a, b) {
+                    pageTotal_dev = api.column(5, {page: 'current'}).data().reduce(function (a, b) {
+                        return (intVal(a) + intVal(b)).toFixed(2);
+                    }, 0);
+                    pageTotal_disp = api.column(6, {page: 'current'}).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
 
                     // actualzar total en el pie de tabla
-                    $(api.column(3).footer()).html('$' + pageTotal_eje + '<p style="color: #0c199c">' + ' ( $' + total_ejecutado + ' )' + '</p>');
-                    $(api.column(4).footer()).html('$' + pageTotal_dev + '<p style="color: #0c199c">' + ' ( $' + total_devengado + ' )' + '</p>');
-                    $(api.column(5).footer()).html('$' + pageTotal_disp + '<p style="color: #0c199c">' + ' ( $' + total_disponible + ' )' + '</p>');
+                    $(api.column(3).footer()).html('$' + pageTotal_pre + '<p style="color: #0c199c">' + ' ( $' + total_presupuesto + ' )' + '</p>');
+                    $(api.column(4).footer()).html('$' + pageTotal_eje + '<p style="color: #0c199c">' + ' ( $' + total_ejecutado + ' )' + '</p>');
+                    $(api.column(5).footer()).html('$' + pageTotal_dev + '<p style="color: #0c199c">' + ' ( $' + total_devengado + ' )' + '</p>');
+                    $(api.column(6).footer()).html('$' + pageTotal_disp + '<p style="color: #0c199c">' + ' ( $' + total_disponible + ' )' + '</p>');
                 },
                 dom: 'Blfrtip',
                 buttons: [

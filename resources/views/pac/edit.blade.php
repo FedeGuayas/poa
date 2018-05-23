@@ -11,7 +11,7 @@
         <div class="col-md-12">
             <div class="panel panel-info">
                 <div class="panel-heading clearfix">
-                    EDITAR-PAC                    {{--{{$pac->area_item->area->area}}--}}
+                    EDITAR-PROCESO                    {{--{{$pac->area_item->area->area}}--}}
                     <a href="#!" class="btn-collapse pull-right" data-toggle="collapse" data-target="#poa-area"
                        aria-expanded="false" aria-controls="poa-area"><i class="fa fa-minus"></i></a>
                 </div>

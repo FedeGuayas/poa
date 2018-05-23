@@ -11,7 +11,7 @@
 <div class="header">
     <div style="text-align: center; position: relative">
         <p>
-            <span><b>PAC-Areas</b></span> <br>
+            <span><b>Procesos-Areas</b></span> <br>
             <span><b>{{$area->area}}</b></span>
         </p>
     </div>

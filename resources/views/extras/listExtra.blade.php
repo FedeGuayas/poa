@@ -2,7 +2,7 @@
 <table class="table table-striped table-bordered table-condensed table-hover highlight responsive-table">
     <thead>
     @foreach($extras as $ex)
-    <th>{{$ex->mes}}</th>
+    <th>{{$ex->month}}</th>
     @endforeach
     <th>TOTAL</th>
     </thead>

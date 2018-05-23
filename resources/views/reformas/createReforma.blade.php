@@ -31,7 +31,7 @@
                             <div class="form-group">
                                 <i class="fa fa-pencil"></i>
                                 {!! Form::label('informe','Justificativo origen:') !!}
-                                {!! Form::textarea('informe',null,['class'=>'form-control','placeholder'=>'Justificación origen para el informe técnico...','rows'=>'2','autofocus','required','maxlength'=>'230']) !!}
+                                {!! Form::textarea('informe',null,['class'=>'form-control','placeholder'=>'Justificación origen para el informe técnico...','rows'=>'2','autofocus','required']) !!}
                                 <small id="notaHelpBlock" class="form-text text-muted">
                                     Ejemplo Justificativo origen: Se cancelaron los viajes planificados para el mes de enero ...
                                 </small>
@@ -111,7 +111,7 @@
                                     <td>{{$pac->mes}}</td>
                                     <td>{{$pac->concepto}}</td>
                                     <td>{{$pac->nombres.' '.$pac->apellidos}}</td>
-                                    <td class="no_ejecutado">$ <input type="number" readonly value="{{$pac->liberado}}"
+                                    <td class="no_ejecutado">$ <input type="number" readonly value="{{$pac->valor_reformar_origen}}"
                                                                       style="border: none; width: 100px">
                                     </td>
                                     <td>
@@ -151,7 +151,7 @@
                 <div class="col-md-6" id="enviar_origen" hidden>
                     <div class="col-lg-2">
                         <div class="form-group">
-                            {!! Form::button('<i class="fa fa-floppy-o" aria-hidden="true"></i> Guardar',['class'=>'btn btn-sm btn-success tip','data-placement'=>'top', 'title'=>'Guardar Origen', 'id'=>'guardar_origen', 'type'=>'submit']) !!}
+                            {!! Form::button('<i class="fa fa-floppy-o" aria-hidden="true"></i> Guardar <i class="fa fa-refresh fa-spin fa-2x fa-fw text-danger hidden load_reform_create"></i>',['class'=>'btn btn-sm btn-success tip','data-placement'=>'top', 'title'=>'Guardar Origen', 'id'=>'guardar_origen', 'type'=>'submit']) !!}
                         </div>
                     </div>
                     <div class="col-lg-2">
@@ -240,6 +240,15 @@
                 });
             });
 
+
+            $("form").submit('', function (event) {
+                var load = $(".load_reform_create");
+                load.removeClass('hidden');
+                event.preventDefault();
+                $("#guardar_origen").prop("disabled", true);
+                event.currentTarget.submit();
+                load.addClass('hidden');
+            });
 
         });
 

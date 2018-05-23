@@ -22,7 +22,7 @@
         <hr>
 
         <div class="panel panel-success">
-            <div class="panel-heading clearfix">PAC - {{ count($area)>0 ? $area->area : "Direcciones" }}
+            <div class="panel-heading clearfix">PROCESOS - {{ count($area)>0 ? $area->area : "Direcciones" }}
                 <a href="#!" class="btn-collapse pull-right" data-toggle="collapse" data-target="#resumen"
                    aria-expanded="false" aria-controls="resumen"><i class="fa fa-minus"></i></a>
             </div>
@@ -39,6 +39,7 @@
                     <table class="table table-striped table-bordered table-condensed table-hover" id="pac_table"
                            cellspacing="0" style="display: none; font-size: 9px;">
                         <thead>
+                        <th>No.</th>
                         <th style="width: 60px">Código</th>
                         <th>Item</th>
                         <th>Dirección
@@ -60,6 +61,7 @@
                         </thead>
                         <tfoot>
                         <tr>
+                            <th>No.</th>
                             <th class="search-filter">codigo</th>
                             <th class="search-filter">item</th>
                             <th></th>
@@ -81,264 +83,263 @@
                         </tfoot>
                         <tbody>
                         @foreach($pacs as $pac)
+                            <tr>
+                                <td>{{$pac->id}}</td>
+                                <td>{{$pac->cod_programa.'-'.$pac->cod_actividad.'-'.$pac->cod_item}}</td>
+                                <td>{{$pac->item}}</td>
+                                <td>
+                                    {{--verifico si presupuesto es del area del trabajador o de otro poa compartido  --}}
+                                    @if ($pac->area_trabajador == $pac->aiID)
+                                        {{$pac->area}}
+                                    @else
+                                        {{--EL dinero es compartido con trabajadores de otra area--}}
+                                        <strong class="text-danger">{{$pac->area}}</strong>
+                                    @endif
+                                </td>
+                                <td>{{$pac->mes}}</td>
+                                <td>{{$pac->nombres}} {{$pac->apellidos}}</td>
+                                <td>{{$pac->procedimiento}}</td>
+                                <td>{{$pac->concepto}}</td>
+                                <td>$ {{$pac->presupuesto}}</td>
+                                <td>$ {{$pac->comprometido}} </td>
+                                <td>$ {{$pac->devengado}}</td>
+                                <td>
+                                    $ {{$pac->disponible}}
+                                </td>
+                                <td>
+                                    $ {{$pac->liberado}}
+                                </td>
+                                <td>{{--INCLUSION--}}
 
-                            {{--Si el usuario autenticado es el dueño del proceso y si tiene el role (responsable-pac),
-                              o el trabajador pertenece al area que se asigno el pac y es analista o responsable-poa,
-                              o  es root o administrador, mostrarlo--}}
-                            @if ( ( (Auth::user()->worker_id==$pac->trabajador_id) && Auth::user()->hasRole('responsable-pac') ||
-                            (Auth::user()->worker->departamento->area_id==$pac->area_trabajador && (Auth::user()->hasRole('analista') || Auth::user()->hasRole('responsable-poa'))) ) || (Auth::user()->hasRole('root') || Auth::user()->hasRole('administrador')))
+                                    {{--Si es un una inclusion y es un proceso pac--}}
+                                    @if($pac->inclusion==\App\Pac::PROCESO_INCLUSION_SI && $pac->proceso_pac==\App\Pac::PROCESO_PAC)
 
-                                <tr>
-                                    <td>{{$pac->cod_programa.'-'.$pac->cod_actividad.'-'.$pac->cod_item}}</td>
-                                    <td>{{$pac->item}}</td>
-                                    <td>
-                                        {{--verifico si presupuesto es del area del trabajador o de otro poa compartido  --}}
-                                        @if ($pac->area_trabajador == $pac->aiID)
-                                            {{$pac->area}}
-                                        @else
-                                            {{--EL dinero es compartido con trabajadores de otra area--}}
-                                            <strong class="text-danger">{{$pac->area}}</strong>
-                                        @endif
-                                    </td>
-                                    <td>{{$pac->mes}}</td>
-                                    <td>{{$pac->nombres}} {{$pac->apellidos}}</td>
-                                    <td>{{$pac->procedimiento}}</td>
-                                    <td>{{$pac->concepto}}</td>
-                                    <td>$ {{$pac->presupuesto}}</td>
-                                    <td>$ {{$pac->comprometido}} </td>
-                                    <td>$ {{$pac->devengado}}</td>
-                                    <td>
-                                        $ {{$pac->disponible}}
-                                    </td>
-                                    <td>
-                                        $ {{$pac->liberado}}
-                                    </td>
-                                    <td>
-                                        {{--INCLUSION--}}
-                                        {{--Si es un una inclusion y es un proceso pac--}}
-                                        @if($pac->inclusion==\App\Pac::PROCESO_INCLUSION_SI && $pac->proceso_pac==\App\Pac::PROCESO_PAC)
-                                            {{--si tiene permisos create-inc-pac, responsables de proceso--}}
-                                            @permission('create-inc-pac')
-                                            {{-- Generar PDF Solicitud de inclusion pac, sino hay un archivo inclusion pac subido o esta inactivo--}}
-                                            @if ( (is_null($pac->inclusion_file) ||  $pac->inclusion_file_status==\App\InclusionPac::INCLUSION_PAC_INACTIVA))
-                                                <a href="{{route('create.inclusion-pac',$pac->id)}}"
-                                                   class="btn btn-xs btn-danger tip" data-placement="top"
-                                                   title="Solicitud Inclusión PAC">
-                                                    <i class="fa fa-file-pdf-o"></i>
-                                                </a>
-                                            @endif
-                                            @endpermission
-                                            {{-- Subir PDF Solicitud de Inclusion PAC--}}
-                                            {{--Si el usuario es del area del pac y es el responsable del poa, o es root, administrador, financiero y ademas no existe archivo subido o esta inactivo--}}
-                                            @if ((Auth::user()->worker->departamento->area_id==$pac->area_trabajador &&  Auth::user()->hasRole('responsable-poa')) || (Auth::user()->hasRole('root') || Auth::user()->hasRole('administrador') || Auth::user()->hasRole('financiero'))  && (is_null($pac->inclusion_file) || $pac->inclusion_file_status==\App\InclusionPac::INCLUSION_PAC_INACTIVA ))
-                                                <a href="#subirIncPAC" data-toggle="modal" data-id="{{$pac->id}}"
-                                                   data-backdrop="static" data-keyboard="false"
-                                                   class="btn btn-xs btn-success tip" data-placement="top"
-                                                   title="Subir Solicitud Inclusión PAC">
-                                                    <i class="fa fa-upload" aria-hidden="true"></i>
-                                                </a>
-                                            @endif
-                                            {{-- Descargar PDF Solicitud de Inclusion pac si existe y esta activo--}}
-                                            @if (!is_null($pac->inclusion_file) && $pac->inclusion_file_status==\App\InclusionPac::INCLUSION_PAC_ACTIVA)
-                                                <a href="{{route('pac.inclusion.IncPacDownload',$pac->id)}}"
-                                                   class="btn btn-xs btn-primary tip" data-placement="top"
-                                                   title="Descargar Solicitud Inclusión PAC">
-                                                    <i class="fa fa-download"></i>
-                                                </a>
-                                            @endif
-                                        @endif
-                                        {{--FIN INCLUSION--}}
-                                    </td>
-                                    <td>
-                                        {{--SOLICITUD DE REFORMA PAC--}}
-                                        {{--Si es un proceso pac--}}
-                                        @if($pac->proceso_pac==\App\Pac::PROCESO_PAC)
-                                            {{--Si tiene permisos para solicitar reforma pac--}}
-                                            @permission('sr-pac')
-                                            {{-- Generar PDF , sino hay un archivo srpac activo y ademas no es una inclusion--}}
-                                            @if ( (is_null($pac->srpac_file) ||  $pac->srpac_status==\App\Srpac::SRPAC_INACTIVA) && $pac->inclusion==\App\Pac::PROCESO_INCLUSION_NO)
-                                                <a href="{{route('admin.srpacs.create',$pac->id)}}"
-                                                   class="btn btn-xs btn-danger tip" data-placement="top"
-                                                   title="Solicitud Reforma PAC">
-                                                    <i class="fa fa-file-pdf-o"></i>
-                                                </a>
-                                            @endif
-                                            @endpermission
-                                            {{-- Subir PDF Solicitud de reforma pac SRPAC --}}
-                                            {{--Si el usuario es del area del pac y es el responsable del poa, o root, administrador, financiero y no existe archivo subido y activo y no es inclusion--}}
-                                            @if ((Auth::user()->worker->departamento->area_id==$pac->area_trabajador &&  Auth::user()->hasRole('responsable-poa')) || (Auth::user()->hasRole('root') || Auth::user()->hasRole('administrador') || Auth::user()->hasRole('financiero'))  && (is_null($pac->srpac_file) || $pac->srpac_status==\App\Srpac::SRPAC_INACTIVA ) && $pac->inclusion==\App\Pac::PROCESO_INCLUSION_NO)
-                                                <a href="#subirSRPAC" data-toggle="modal" data-id="{{$pac->id}}"
-                                                   data-backdrop="static" data-keyboard="false"
-                                                   class="btn btn-xs btn-success tip" data-placement="top"
-                                                   title="Subir Solicitud Reforma PAC">
-                                                    <i class="fa fa-upload" aria-hidden="true"></i>
-                                                </a>
-                                            @endif
-                                            {{-- Descargar PDF Solicitud de reforma pac SRPAC si existe--}}
-                                            @if (!is_null($pac->srpac_file) && $pac->srpac_status==\App\Srpac::SRPAC_ACTIVA)
-                                                <a href="{{route('pac.SRPACdownload',$pac->id)}}"
-                                                   class="btn btn-xs btn-primary tip" data-placement="top"
-                                                   title="Descargar Solicitud Reforma PAC">
-                                                    <i class="fa fa-download"></i>
-                                                </a>
-                                            @endif
-                                        @endif
-                                        {{--FIN SOLICITUD DE REFORMA PAC--}}
-                                    </td>
-                                    <td>
-                                        {{--CERTIFICACION PAC (CPAC)--}}
-                                        {{--Solicitar certificaciones x correo--}}
-                                        @if ($pac->disponible>0)
-                                            <a href="#solCertificacionesModal" data-toggle="modal"
-                                               data-id="{{$pac->id}}"
-                                               class="btn btn-xs btn-info tip" data-placement="top"
-                                               title="Solicitar Cert. Presupuestaria y/o CPAC  ">
-                                                <i class="fa fa-envelope"></i>
+                                        {{--si tiene permisos create-inc-pac, responsables de proceso--}}
+                                        {{--@permission('create-inc-pac')--}}
+                                        {{-- Generar PDF Solicitud de inclusion pac, sino hay un archivo inclusion pac subido o esta inactivo--}}
+                                        @if ( (is_null($pac->inclusion_file) ||  $pac->inclusion_file_status==\App\InclusionPac::INCLUSION_PAC_INACTIVA) && \Entrust::can('create-inc-pac'))
+                                            <a href="{{route('create.inclusion-pac',$pac->id)}}"
+                                               class="btn btn-xs btn-danger tip" data-placement="top"
+                                               title="Solicitud Inclusión PAC">
+                                                <i class="fa fa-file-pdf-o"></i>
                                             </a>
                                         @endif
-                                        {{--Si es un proceso pac y no es infima cuantia--}}
-                                        @if($pac->proceso_pac==\App\Pac::PROCESO_PAC && $pac->procedimiento!='ÍNFIMA CUANTÍA')
-                                            {{--si tiene el permiso cetificacion-pac--}}
-                                            @permission('certificacion-pac')
-                                            {{--Genarar CPAC si tiene rol financiero o es root y no exite una certificacion o no esta activa--}}
-                                            {{--@if ( (Auth::user()->hasRole('financiero') || Auth::user()->hasRole('root')) && (is_null($pac->certificado_file) ||  $pac->certificado_status==\App\Cpac::CPAC_INACTIVA) )--}}
-                                            {{--Generar siempre si el disponible es > a 0--}}
-                                            @if ( (Auth::user()->hasRole('financiero') || Auth::user()->hasRole('root')) && $pac->disponible>0 )
-                                                <a href="{{route('admin.pacs.certificacion-pac',$pac->id)}}"
-                                                   class="btn btn-xs btn-danger tip" data-placement="top"
-                                                   title="Generar Certificación PAC" target="_blank">
-                                                    <i class="fa fa-file-pdf-o"></i>
-                                                </a>
-                                            @endif
-                                            {{-- Subir PDF CPAC --}}
-                                            {{--Si el usuario tiene rol financiero o es root y exite una certificacion sin archivo subido y no esta activa--}}
-                                            @if ( (Auth::user()->hasRole('financiero') || Auth::user()->hasRole('root')) && (is_null($pac->certificado_file) || $pac->certificado_status==\App\Cpac::CPAC_INACTIVA) )
-                                                <a href="#subirCPAC" data-toggle="modal" data-id="{{$pac->id}}"
-                                                   data-backdrop="static" data-keyboard="false"
-                                                   class="btn btn-xs btn-success tip" data-placement="top"
-                                                   title="Subir Certificación PAC">
-                                                    <i class="fa fa-upload" aria-hidden="true"></i>
-                                                </a>
-                                            @endif
-                                            @endpermission
-                                            {{-- Descargar PDF CPAC --}}
-                                            {{--Si el usuario autenticado es el dueño del proceso y tiene el role (responsable-pac), o si es root o administrador o financiero, y ademas la cpac se subio y esta activa--}}
-                                            @if (( ( Auth::user()->worker_id==$pac->trabajador_id && Auth::user()->hasRole('responsable-pac') ) || ( Auth::user()->hasRole('root') || Auth::user()->hasRole('administrador') || Auth::user()->hasRole('financiero')) ) && (!is_null($pac->certificado_file) && $pac->certificado_status==\App\Cpac::CPAC_ACTIVA))
-                                                <a href="{{route('pac.CPACdownload',$pac->id)}}"
-                                                   class="btn btn-xs btn-primary tip" data-placement="top"
-                                                   title="Descargar Certificación">
-                                                    <i class="fa fa-download"></i>
-                                                </a>
-                                            @endif
+                                        {{--@endpermission--}}
+
+                                        {{-- Subir PDF Solicitud de Inclusion PAC--}}
+                                        {{--Si  es root, administrador, financiero y ademas no existe archivo subido o esta inactivo--}}
+                                        @if ( (Auth::user()->hasRole('root') || Auth::user()->hasRole('administrador') || Auth::user()->hasRole('financiero') )  && (is_null($pac->inclusion_file) || $pac->inclusion_file_status==\App\InclusionPac::INCLUSION_PAC_INACTIVA ))
+                                            <a href="#subirIncPAC" data-toggle="modal" data-id="{{$pac->id}}"
+                                               data-backdrop="static" data-keyboard="false"
+                                               class="btn btn-xs btn-success tip" data-placement="top"
+                                               title="Subir Solicitud Inclusión PAC">
+                                                <i class="fa fa-upload" aria-hidden="true"></i>
+                                            </a>
                                         @endif
-                                        {{--FIN CERTIFICACION PAC (CPAC)--}}
-                                    </td>
-                                    <td>
-                                        {{--CERTIFICACION PRESUPUESTARIA--}}
-                                        @permission('cert-presup')
-                                        <a href="#subirCPresup" data-toggle="modal" data-id="{{$pac->id}}"
-                                           data-backdrop="static" data-keyboard="false"
-                                           class="btn btn-xs btn-success tip" data-placement="top"
-                                           title="Subir Certificación Presupuestaria">
-                                            <i class="fa fa-upload" aria-hidden="true"></i>
-                                        </a>
-                                        @endpermission
-                                        {{--Si el usuario autenticado es el dueño del proceso y tiene el role (responsable-pac), o si es root o administrador o financiero, y ademas la cert presupuestaria se subio y esta activa--}}
-                                        @if (( ( Auth::user()->worker_id==$pac->trabajador_id && Auth::user()->hasRole('responsable-pac') ) || ( Auth::user()->hasRole('root') || Auth::user()->hasRole('administrador') || Auth::user()->hasRole('financiero')) ) && (!is_null($pac->cert_presup_file) && $pac->cert_presup_status==\App\Cpresupuestaria::CPRES_ACTIVA))
-                                            <a href="{{route('pac.CPresupDownload',$pac->id)}}"
+
+                                        {{-- Descargar PDF Solicitud de Inclusion pac si existe y esta activo--}}
+                                        @if (!is_null($pac->inclusion_file) && $pac->inclusion_file_status==\App\InclusionPac::INCLUSION_PAC_ACTIVA)
+                                            <a href="{{route('pac.inclusion.IncPacDownload',$pac->id)}}"
                                                class="btn btn-xs btn-primary tip" data-placement="top"
-                                               title="Descargar Certificación Presupuestaria">
+                                               title="Descargar Solicitud Inclusión PAC">
                                                 <i class="fa fa-download"></i>
                                             </a>
                                         @endif
-                                        {{--FIN CERTIFICACION PRESUPUESTARIA--}}
-                                    </td>
-                                    <td>
-                                        {{--ACCIONES--}}
 
-                                        {{--A LIBERAR para reforma--}}
-                                        {{--Si es un proceso pac--}}
-                                        @if ($pac->proceso_pac==\App\Pac::PROCESO_PAC)
-                                            {{--Si el usuario autenticado es el dueño del proceso y si tiene el role (responsable-pac) o si es root o administrador y ademas la srpac se subio y esta activa y el disponible es mayor que 0--}}
-                                            @if ( ((Auth::user()->worker_id==$pac->trabajador_id && Auth::user()->hasRole('responsable-pac')) || ( Auth::user()->hasRole('root') || Auth::user()->hasRole('administrador'))) && (!is_null($pac->srpac_file) && $pac->srpac_status==\App\Srpac::SRPAC_ACTIVA) && $pac->disponible>0 )
-                                                <a href="{{route('pac.getLiberar',$pac->id)}}"
-                                                   class="btn btn-xs btn-warning tip" data-placement="top"
-                                                   title="Liberar para Reforma">L
-                                                </a>
-                                            @endif
+                                    @endif
+
+                                </td>{{--FIN INCLUSION--}}
+
+                                <td>{{--SOLICITUD DE REFORMA PAC--}}
+
+                                    {{--Si es un proceso pac--}}
+                                    @if($pac->proceso_pac==\App\Pac::PROCESO_PAC)
+
+                                        {{-- Generar PDF , sino hay un archivo srpac y ademas no es una inclusion y el usuario tiene permiso de sr-pac--}}
+                                        @if ( (is_null($pac->srpac_file) ||  $pac->srpac_status==\App\Srpac::SRPAC_INACTIVA) && $pac->inclusion==\App\Pac::PROCESO_INCLUSION_NO && \Entrust::can('sr-pac'))
+                                            <a href="{{route('admin.srpacs.create',$pac->id)}}"
+                                               class="btn btn-xs btn-danger tip" data-placement="top"
+                                               title="Solicitud Reforma PAC">
+                                                <i class="fa fa-file-pdf-o"></i>
+                                            </a>
                                         @endif
-                                        {{--no es proceso pac y hay disponibilidad, no necesita docum--}}
-                                        @if ($pac->proceso_pac==\App\Pac::NO_PROCESO_PAC && $pac->disponible>0)
+
+                                        {{-- Subir PDF Solicitud de reforma pac SRPAC --}}
+                                        {{--Si el usuario es del area del pac y es el responsable del poa, o root, administrador, financiero y no existe archivo subido y activo y no es inclusion--}}
+                                        {{--                                        @if ((Auth::user()->worker->departamento->area_id==$pac->area_trabajador &&  Auth::user()->hasRole('responsable-poa')) || (Auth::user()->hasRole('root') || Auth::user()->hasRole('administrador') || Auth::user()->hasRole  ('financiero'))  && (is_null($pac->srpac_file) || $pac->srpac_status==\App\Srpac::SRPAC_INACTIVA ) && $pac->inclusion==\App\Pac::PROCESO_INCLUSION_NO)--}}
+                                        @if ( (Auth::user()->hasRole('root') || Auth::user()->hasRole('administrador') || Auth::user()->hasRole  ('financiero'))  && (is_null($pac->srpac_file) || $pac->srpac_status==\App\Srpac::SRPAC_INACTIVA ) && $pac->inclusion==\App\Pac::PROCESO_INCLUSION_NO)
+                                            <a href="#subirSRPAC" data-toggle="modal" data-id="{{$pac->id}}"
+                                               data-backdrop="static" data-keyboard="false"
+                                               class="btn btn-xs btn-success tip" data-placement="top"
+                                               title="Subir Solicitud Reforma PAC">
+                                                <i class="fa fa-upload" aria-hidden="true"></i>
+                                            </a>
+                                        @endif
+
+                                        {{-- Descargar PDF Solicitud de reforma pac SRPAC si existe--}}
+                                        @if (!is_null($pac->srpac_file) && $pac->srpac_status==\App\Srpac::SRPAC_ACTIVA)
+                                            <a href="{{route('pac.SRPACdownload',$pac->id)}}"
+                                               class="btn btn-xs btn-primary tip" data-placement="top"
+                                               title="Descargar Solicitud Reforma PAC">
+                                                <i class="fa fa-download"></i>
+                                            </a>
+                                        @endif
+                                    @endif
+
+                                </td>{{--FIN SOLICITUD DE REFORMA PAC--}}
+
+                                <td>{{--CERTIFICACION PAC (CPAC)--}}
+
+                                    {{--Solicitar certificaciones x correo--}}
+                                    @if ($pac->disponible>0)
+                                        <a href="#solCertificacionesModal" data-toggle="modal"
+                                           data-id="{{$pac->id}}"
+                                           class="btn btn-xs btn-info tip" data-placement="top"
+                                           title="Solicitar Cert. Presupuestaria y/o CPAC  ">
+                                            <i class="fa fa-envelope"></i>
+                                        </a>
+                                    @endif
+
+                                    {{--Si es un proceso pac y no es infima cuantia--}}
+                                    @if($pac->proceso_pac==\App\Pac::PROCESO_PAC && $pac->procedimiento!='ÍNFIMA CUANTÍA')
+
+                                        {{--Genarar CPAC si tiene rol financiero o es root , disponible > 0 y tiene permiso--}}
+                                        @if ( (Auth::user()->hasRole('financiero') || Auth::user()->hasRole('root')) && $pac->disponible>0)
+                                            <a href="{{route('admin.pacs.certificacion-pac',$pac->id)}}"
+                                               class="btn btn-xs btn-danger tip" data-placement="top"
+                                               title="Generar Certificación PAC" target="_blank">
+                                                <i class="fa fa-file-pdf-o"></i>
+                                            </a>
+                                        @endif
+
+                                        {{-- Subir PDF CPAC --}}
+                                        {{--Si rol financiero o es root y exite una certificacion sin archivo subido y no esta activa--}}
+                                        @if ( (Auth::user()->hasRole('financiero') || Auth::user()->hasRole('root')) && (is_null($pac->certificado_file) || $pac->certificado_status==\App\Cpac::CPAC_INACTIVA) )
+                                            <a href="#subirCPAC" data-toggle="modal" data-id="{{$pac->id}}"
+                                               data-backdrop="static" data-keyboard="false"
+                                               class="btn btn-xs btn-success tip" data-placement="top"
+                                               title="Subir Certificación PAC">
+                                                <i class="fa fa-upload" aria-hidden="true"></i>
+                                            </a>
+                                        @endif
+
+                                        {{-- Descargar PDF CPAC --}}
+                                        {{--Si  la cpac se subio y esta activa--}}
+                                        @if (( !is_null($pac->certificado_file) && $pac->certificado_status==\App\Cpac::CPAC_ACTIVA) )
+                                            <a href="{{route('pac.CPACdownload',$pac->id)}}"
+                                               class="btn btn-xs btn-primary tip" data-placement="top"
+                                               title="Descargar Certificación">
+                                                <i class="fa fa-download"></i>
+                                            </a>
+                                        @endif
+
+                                    @endif
+
+                                </td>{{--FIN CERTIFICACION PAC (CPAC)--}}
+
+                                <td>{{--CERTIFICACION PRESUPUESTARIA--}}
+
+                                    @permission('cert-presup')
+                                    <a href="#subirCPresup" data-toggle="modal" data-id="{{$pac->id}}"
+                                       data-backdrop="static" data-keyboard="false"
+                                       class="btn btn-xs btn-success tip" data-placement="top"
+                                       title="Subir Certificación Presupuestaria">
+                                        <i class="fa fa-upload" aria-hidden="true"></i>
+                                    </a>
+                                    @endpermission
+
+                                    {{--Si la cert presupuestaria se subio y esta activa--}}
+                                    @if (!is_null($pac->cert_presup_file) && $pac->cert_presup_status==\App\Cpresupuestaria::CPRES_ACTIVA)
+                                        <a href="{{route('pac.CPresupDownload',$pac->id)}}"
+                                           class="btn btn-xs btn-primary tip" data-placement="top"
+                                           title="Descargar Certificación Presupuestaria">
+                                            <i class="fa fa-download"></i>
+                                        </a>
+                                    @endif
+
+                                </td>{{--FIN CERTIFICACION PRESUPUESTARIA--}}
+
+                                <td>{{--ACCIONES--}}
+
+                                    {{--A LIBERAR para reforma--}}
+                                    {{--Si es un proceso pac--}}
+                                    @if ($pac->proceso_pac==\App\Pac::PROCESO_PAC)
+                                        {{-- si la srpac se subio y esta activa y el disponible es mayor que 0--}}
+                                        @if ( !is_null($pac->srpac_file) && $pac->srpac_status==\App\Srpac::SRPAC_ACTIVA && $pac->disponible>0 )
                                             <a href="{{route('pac.getLiberar',$pac->id)}}"
                                                class="btn btn-xs btn-warning tip" data-placement="top"
                                                title="Liberar para Reforma">L
                                             </a>
                                         @endif
-                                        {{--FIN LIBERAR--}}
+                                    @endif
 
-                                        {{--REFORMAR--}}
-                                        @if ($pac->proceso_pac==\App\Pac::PROCESO_PAC && $pac->liberado > 0 )
-                                            {{--Si hay monto liberado y se subio el pdf de la srpac o si no es un proceso pac--}}
-                                            @if((!is_null($pac->srpac_file) && $pac->srpac_status==\App\Srpac::SRPAC_ACTIVA) || ($pac->proceso_pac== \App\Pac::NO_PROCESO_PAC))
-                                                <a href="#tipoReformaModal" data-toggle="modal" data-id="{{$pac->id}}"
-                                                   class="btn btn-xs btn-danger tip botonReform" data-placement="top"
-                                                   title="Solicitud de Reforma"><i class="fa fa-recycle"
-                                                                                   aria-hidden="true"></i>
-                                                </a>
-                                            @endif
-                                        @elseif($pac->proceso_pac==\App\Pac::NO_PROCESO_PAC && $pac->liberado > 0)
+                                    {{--No es proceso pac y hay disponibilidad, no necesita docum--}}
+                                    @if ($pac->proceso_pac==\App\Pac::NO_PROCESO_PAC && $pac->disponible>0)
+                                        <a href="{{route('pac.getLiberar',$pac->id)}}"
+                                           class="btn btn-xs btn-warning tip" data-placement="top"
+                                           title="Liberar para Reforma">L
+                                        </a>
+                                    @endif
+                                    {{--FIN LIBERAR--}}
+
+                                    {{--REFORMAR--}}
+                                    @if ($pac->proceso_pac==\App\Pac::PROCESO_PAC && $pac->liberado > 0 )
+                                        {{--Si hay monto liberado y se subio el pdf de la srpac o si no es un proceso pac--}}
+                                        @if((!is_null($pac->srpac_file) && $pac->srpac_status==\App\Srpac::SRPAC_ACTIVA) || ($pac->proceso_pac== \App\Pac::NO_PROCESO_PAC))
                                             <a href="#tipoReformaModal" data-toggle="modal" data-id="{{$pac->id}}"
                                                class="btn btn-xs btn-danger tip botonReform" data-placement="top"
                                                title="Solicitud de Reforma"><i class="fa fa-recycle"
                                                                                aria-hidden="true"></i>
                                             </a>
                                         @endif
-                                        {{--FIN REFORMAR--}}
+                                    @elseif($pac->proceso_pac==\App\Pac::NO_PROCESO_PAC && $pac->liberado > 0)
+                                        <a href="#tipoReformaModal" data-toggle="modal" data-id="{{$pac->id}}"
+                                           class="btn btn-xs btn-danger tip botonReform" data-placement="top"
+                                           title="Solicitud de Reforma"><i class="fa fa-recycle"
+                                                                           aria-hidden="true"></i>
+                                        </a>
+                                    @endif
+                                    {{--FIN REFORMAR--}}
 
-                                        {{--GESTION de procesos--}}
-                                        @permission('gestion-procesos')
-                                        {{--Si es un proceso pac y hay disponible--}}
-                                        @if ($pac->proceso_pac== \App\Pac::PROCESO_PAC && $pac->disponible > 0)
-                                            {{--Si el usuario autenticado es el dueño del proceso y si tiene el role (responsable-pac), o si es root , y ademas exite la certificacion cpac y cert presupuestaria y estan activas --}}
-                                            @if (
-                                            ( (Auth::user()->worker_id==$pac->trabajador_id && Auth::user()->hasRole('responsable-pac')) || (Auth::user()->hasRole('root')) ) && ( (!is_null($pac->certificado_file) && $pac->certificado_status==\App\Cpac::CPAC_ACTIVA) && (!is_null($pac->cert_presup_file) && $pac->cert_presup_status==\App\Cpresupuestaria::CPRES_ACTIVA)) )
-                                                <a href="{{route('admin.gestion.create',$pac->id)}}"
-                                                   class="btn btn-xs btn-primary tip"
-                                                   data-placement="top" title="Gestión">
-                                                    <i class="fa fa-info-circle" aria-hidden="true"></i>
-                                                </a>
-                                            @endif
-                                        @elseif ($pac->proceso_pac== \App\Pac::NO_PROCESO_PAC && $pac->disponible>0)
-                                            {{--Si el usuario autenticado es el dueño del proceso y si tiene el role (responsable-pac), o si es root , y ademas exite la cert presupuestaria y esta activa --}}
-                                            @if (
-                                            ( (Auth::user()->worker_id==$pac->trabajador_id && Auth::user()->hasRole('responsable-pac')) || (Auth::user()->hasRole('root')) ) && (!is_null($pac->cert_presup_file) && $pac->cert_presup_status==\App\Cpresupuestaria::CPRES_ACTIVA) )
-                                                <a href="{{route('admin.gestion.create',$pac->id)}}"
-                                                   class="btn btn-xs btn-primary tip"
-                                                   data-placement="top" title="Gestión">
-                                                    <i class="fa fa-info-circle" aria-hidden="true"></i>
-                                                </a>
-                                            @endif
+                                    {{--GESTION de procesos--}}
+                                    @permission('gestion-procesos')
+                                    {{--Si es un proceso pac y hay disponible--}}
+                                    @if ($pac->proceso_pac== \App\Pac::PROCESO_PAC && $pac->disponible > 0)
+                                        {{--Si el usuario autenticado es el dueño del proceso y si tiene el role (responsable-pac), o si es root , y ademas exite la certificacion cpac y cert presupuestaria y estan activas --}}
+                                        @if ( !is_null($pac->certificado_file) && $pac->certificado_status==\App\Cpac::CPAC_ACTIVA)
+                                            {{--( (Auth::user()->worker_id==$pac->trabajador_id && Auth::user()->hasRole('responsable-pac')) || (Auth::user()->hasRole('root')) ) && ( (!is_null($pac->certificado_file) && $pac->certificado_status==\App\Cpac::CPAC_ACTIVA) && (!is_null($pac->cert_presup_file) && $pac->cert_presup_status==\App\Cpresupuestaria::CPRES_ACTIVA)) )--}}
+                                            <a href="{{route('admin.gestion.create',$pac->id)}}"
+                                               class="btn btn-xs btn-primary tip"
+                                               data-placement="top" title="Gestión">
+                                                <i class="fa fa-info-circle" aria-hidden="true"></i>
+                                            </a>
                                         @endif
-                                        @endpermission
-                                        {{--FIN GESTION--}}
+                                    @elseif ($pac->proceso_pac== \App\Pac::NO_PROCESO_PAC && $pac->disponible>0)
+                                        {{--Si el usuario autenticado es el dueño del proceso y si tiene el role (responsable-pac), o si es root , y ademas exite la cert presupuestaria y esta activa --}}
 
-                                        {{--VER GESTION Procesos--}}
-                                        @if ($pac->comprometido>0 || $pac->devengado > 0)
-                                            {{--Si el usuario autenticado es el dueño del proceso y si tiene el role (responsable-pac), o si es root o financiero --}}
-                                            @if ( (Auth::user()->worker_id==$pac->trabajador_id && Auth::user()->hasRole('responsable-pac')) || (Auth::user()->hasRole('root') || Auth::user()->hasRole('financiero')) )
-                                                <a href="{{route('admin.gestion.show',$pac->id)}}"
-                                                   class="btn btn-xs btn-info tip"
-                                                   data-placement="top" title="Ver Gestión"><i class="fa fa-eye"
-                                                                                               aria-hidden="true"></i>
-                                                </a>
-                                            @endif
-                                        @endif
-                                        {{--FIN VER GESTION--}}
+                                        <a href="{{route('admin.gestion.create',$pac->id)}}"
+                                           class="btn btn-xs btn-primary tip"
+                                           data-placement="top" title="Gestión">
+                                            <i class="fa fa-info-circle" aria-hidden="true"></i>
+                                        </a>
 
-                                        {{--FIN ACCIONES--}}
-                                    </td>
-                                </tr>
-                            @endif
+                                    @endif
+                                    @endpermission{{--FIN GESTION--}}
+
+                                    {{--VER GESTION Procesos--}}
+                                    @if ($pac->comprometido>0 || $pac->devengado > 0)
+                                        {{--Si el usuario autenticado es el dueño del proceso y si tiene el role (responsable-pac), o si es root o financiero --}}
+                                        <a href="{{route('admin.gestion.show',$pac->id)}}"
+                                           class="btn btn-xs btn-info tip"
+                                           data-placement="top" title="Ver Gestión"><i class="fa fa-eye"
+                                                                                       aria-hidden="true"></i>
+                                        </a>
+                                    @endif
+                                    {{--FIN VER GESTION--}}
+
+                                </td>{{--FIN ACCIONES--}}
+
+                            </tr>
                         @endforeach
                         </tbody>
                     </table>
@@ -358,7 +359,6 @@
 
 
 @section('scripts')
-    <script src="{{asset('js/renderSection.js')}}"></script>
     <script src="{{asset('plugins/jquery-bootstrap-waitingFor/bootstrap-waitingfor.js')}}"></script>
 
     <script>
@@ -655,7 +655,6 @@
                     success: function (response) {
                     },
                     error: function (response) {
-                        console.log(response);
 
                     }
                 });
@@ -705,45 +704,45 @@
                                 i : 0;
                     };
                     // Total en todas las paginas
-                    total_presupuesto = api.column(7).data().reduce(function (a, b) {
+                    total_presupuesto = api.column(8).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
-                    total_ejecutado = api.column(8).data().reduce(function (a, b) {
+                    total_ejecutado = api.column(9).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
-                    total_devengado = api.column(9).data().reduce(function (a, b) {
+                    total_devengado = api.column(10).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
-                    total_disponible = api.column(10).data().reduce(function (a, b) {
+                    total_disponible = api.column(11).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
-                    total_reforma = api.column(11).data().reduce(function (a, b) {
+                    total_reforma = api.column(12).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
 
                     // Total en la pagina actual
-                    pageTotal_pre = api.column(7, {page: 'current'}).data().reduce(function (a, b) {
+                    pageTotal_pre = api.column(8, {page: 'current'}).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
-                    pageTotal_eje = api.column(8, {page: 'current'}).data().reduce(function (a, b) {
+                    pageTotal_eje = api.column(9, {page: 'current'}).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
-                    pageTotal_dev = api.column(9, {page: 'current'}).data().reduce(function (a, b) {
+                    pageTotal_dev = api.column(10, {page: 'current'}).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
-                    pageTotal_disp = api.column(10, {page: 'current'}).data().reduce(function (a, b) {
+                    pageTotal_disp = api.column(11, {page: 'current'}).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
-                    pageTotal_reform = api.column(11, {page: 'current'}).data().reduce(function (a, b) {
+                    pageTotal_reform = api.column(12, {page: 'current'}).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
 
                     // actualzar total en el pie de tabla
-                    $(api.column(7).footer()).html('$' + pageTotal_pre + '<p style="color: #0c199c">' + ' ( $' + total_presupuesto + ' )' + '</p>');
-                    $(api.column(8).footer()).html('$' + pageTotal_eje + '<p style="color: #0c199c">' + ' ( $' + total_ejecutado + ' )' + '</p>');
-                    $(api.column(9).footer()).html('$' + pageTotal_dev + '<p style="color: #0c199c">' + ' ( $' + total_devengado + ' )' + '</p>');
-                    $(api.column(10).footer()).html('$' + pageTotal_disp + '<p style="color: #0c199c">' + ' ( $' + total_disponible + ' )' + '</p>');
-                    $(api.column(11).footer()).html('$' + pageTotal_reform + '<p style="color: #0c199c">' + ' ( $' + total_reforma + ' )' + '</p>');
+                    $(api.column(8).footer()).html('$' + pageTotal_pre + '<p style="color: #0c199c">' + ' ( $' + total_presupuesto + ' )' + '</p>');
+                    $(api.column(9).footer()).html('$' + pageTotal_eje + '<p style="color: #0c199c">' + ' ( $' + total_ejecutado + ' )' + '</p>');
+                    $(api.column(10).footer()).html('$' + pageTotal_dev + '<p style="color: #0c199c">' + ' ( $' + total_devengado + ' )' + '</p>');
+                    $(api.column(11).footer()).html('$' + pageTotal_disp + '<p style="color: #0c199c">' + ' ( $' + total_disponible + ' )' + '</p>');
+                    $(api.column(12).footer()).html('$' + pageTotal_reform + '<p style="color: #0c199c">' + ' ( $' + total_reforma + ' )' + '</p>');
                 },
                 dom: 'Blfrtip',
                 buttons: [
@@ -831,7 +830,7 @@
                 type: "GET",
                 headers: {'X-CSRF-TOKEN': token},
                 success: function (response) {
-                    var monto = Math.round((parseFloat(response.pac.presupuesto) / 1.12) * 100) / 100;
+                    var monto = Math.round((parseFloat(response.pac.disponible) / 1.12) * 100) / 100;
                     $("#concepto_sol").val(response.pac.concepto);
                     $("#monto_sol").val(monto);
                     $("#cod_item_sol").val(response.codigos.cod_item);
@@ -846,7 +845,6 @@
                     }
                 },
                 error: function (response) {
-                    console.log(response);
                 }
             });
             var modal = $(this);
@@ -859,15 +857,6 @@
             var form = $("#sol-cert-form");
             form.submit();
         });
-
-        paceOptions = {
-            // Disable the 'elements' source
-            elements: false,
-
-            // Only show the progress on regular and ajax-y page navigation,
-            // not every request
-            restartOnRequestAfter: true
-        }
 
     </script>
 

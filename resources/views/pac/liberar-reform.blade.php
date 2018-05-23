@@ -30,7 +30,7 @@
                     <input type="text" class="form-control" id="user-from" readonly name="user-from"
                            value="{{$pac->worker->nombres.' '.$pac->worker->apellidos.' ( '.$pac->worker->email.' )'}}">
                     <small id="userFromHelpBlock" class="form-text text-muted">
-                        Usuario responsable del PAC.
+                        Usuario responsable del proceso.
                     </small>
                 </div>
             </div>
@@ -66,7 +66,7 @@
         </div>
         <div class="form-group">
             <label for="message-note" class="control-label">Nota:</label>
-            <textarea class="form-control" rows="5" id="message-note" name="message-note" readonly>Estimada(o), se informa que se acaban de liberar recursos para reforma , del proceso PAC: {{$pac->concepto}}, CÓDIGO POA: {{$pac->area_item->item->cod_programa .'-'.$pac->area_item->item->cod_actividad.'-'.$pac->area_item->item->cod_item}}</textarea>
+            <textarea class="form-control" rows="5" id="message-note" name="message-note" readonly>Estimada(o), se informa que se acaban de liberar recursos para reforma , del Proceso: {{$pac->concepto}}, CÓDIGO POA: {{$pac->area_item->item->cod_programa .'-'.$pac->area_item->item->cod_actividad.'-'.$pac->area_item->item->cod_item}}</textarea>
             <small id="messageTextBlock" class="form-text text-muted">
                 Nota obligatoria
             </small>

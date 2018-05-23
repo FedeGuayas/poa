@@ -11,20 +11,22 @@
     </div>
 
 
-    {!! Form::open(['route'=>['admin.historico.index'],'method'=>'GET','class'=>'form_noEnter', 'id'=>'form_cierre']) !!}
+    {!! Form::open(['route'=>['admin.historico.index'],'method'=>'GET','class'=>'form_noEnter']) !!}
     <div class="row">
         <div class="col-lg-6">
             <div class="form-inline">
                 <div class="form-group">
                     {!! Form::label('ejercicio','',['class'=>'sr-only']) !!}
-                    {!! Form::select('ejercicio',$years,$ejercicio,['class'=>'form-control selectpicker','placeholder'=>'Ejercicio','id'=>'ejercicio']) !!}
+                    {!! Form::select('ejercicio',$list_ejercicios,$ejercicio,['class'=>'form-control selectpicker','placeholder'=>'Ejercicio','id'=>'ejercicio']) !!}
                 </div>
                 <div class="form-group">
                     {!! Form::label('mes','',['class'=>'sr-only']) !!}
                     {!! Form::select('mes',$list_meses,$mes,['class'=>'form-control selectpicker','placeholder'=>'Meses...','id'=>'mes']) !!}
                 </div>
-                {!! Form::button('<i class="fa fa-search" aria-hidden="true"></i>',['class'=>'btn btn-primary tip','data-placement'=>'top', 'title'=>'Filtrar','id'=>'buscar', 'type'=>'submit']) !!}
-
+                {!! Form::button('<i class="fa fa-search" aria-hidden="true"></i>',['class'=>'btn btn-primary tip','data-placement'=>'top', 'title'=>'Filtrar','id'=>'buscar', 'type'=>'submit','value'=>'buscar','name'=>'buscar']) !!}
+                @if ( (Auth::user()->hasRole('administrador') || Auth::user()->hasRole('root') || Auth::user()->hasRole('responsable-poa') || Auth::user()->hasRole('analista')) )
+                    {!! Form::button('<i class="fa fa-file-excel-o" aria-hidden="true"></i> Exportar',['class'=>'btn btn-success tip pull-right','data-placement'=>'top', 'title'=>'Exportar','id'=>'exportar', 'type'=>'submit','value'=>'exportar','name'=>'exportar']) !!}
+                @endif
             </div>
         </div>
     </div>
@@ -34,73 +36,51 @@
     <div class="col-md-12">
 
         <div class="panel panel-success">
-            <div class="panel-heading clearfix">Histórico - {{ $mes!="" ? $list_meses[$mes] : "" }} - {{ count($ejercicio)>0 ? $ejercicio : "" }}
+            <div class="panel-heading clearfix">Histórico - {{ $mes!="" ? $list_meses[$mes] : "Seleccione mes" }} - {{ $ejercicio!="" ? $list_ejercicios[$ejercicio] : "Seleccione ejercicio" }}
                 <a href="#!" class="btn-collapse pull-right" data-toggle="collapse" data-target="#resumen"
                    aria-expanded="false" aria-controls="resumen"><i class="fa fa-minus"></i></a>
             </div>
             <div class="panel-body collapse in" id="resumen">
-                @if ( (Auth::user()->hasRole('administrador') || Auth::user()->hasRole('root') || Auth::user()->hasRole('responsable-poa')) )
-                {{--@permission('hacer-cierre')--}}
-                   {!! Form::open (['route' => 'admin.historico.export','method' => 'GET'])!!}
-                   <div class="hidden">
-                       {!! Form::select('mes',$list_meses,$mes,['class'=>'form-control selectpicker','placeholder'=>'Meses...','id'=>'mes']) !!}
-                       {!! Form::select('ejercicio',$years,$ejercicio,['class'=>'form-control selectpicker','placeholder'=>'Ejercicio']) !!}
-                   </div>
-                   <button type="submit" class="btn btn-success tip" data-placement="top"
-                           title="Exportar" id="exportar"><i class="fa fa-file-excel-o" aria-hidden="true"></i> Exportar
-                   </button>
-                   {!! Form::close() !!}
-                {{--@endpermission--}}
-                @endif
+
                 <br>
                 <div class="table-responsive">
                     <table class="table table-striped table-bordered table-condensed table-hover" id="resumen_table"
                            cellspacing="0" style="display: none; font-size: 11px;">
-                        {{--<caption>--}}
-                        {{--@if ($mes)--}}
-                        {{--<a href="#!" class="btn btn-xs btn-default tip" data-placement="top" title="Imprimir" target="_blank">--}}
-                        {{--<i class="fa fa-2x fa-print"></i>--}}
-                        {{--</a>--}}
-                        {{--@endif--}}
-                        {{--</caption>--}}
                         <thead>
                         <tr>
-                            <th>Ejer.</th>
                             <th style="width: 65px">Código</th>
                             <th>Act.</th>
                             <th>Item</th>
-                            <th style="width: 50px">Dirección</th>
-                            <th>Plan</th>
+                            {{--<th style="width: 50px">Dirección</th>--}}
+                            <th>POA-FDG</th>
                             <th>Extras</th>
                             <th>Dev_ESIGEF</th>
-                            {{--<th>Codif_ESIGEF</th>--}}
+                            <th>Codif_ESIGEF</th>
                         </tr>
                         </thead>
                         <tfoot>
                         <tr>
-                            <th></th>
                             <th class="search-filter">filtrar</th>
                             <th></th>
                             <th class="search-filter">filtrar</th>
-                            <th class="search-filter">filtrar</th>
+                           {{-- <th class="search-filter">filtrar</th>--}}
                             <th></th>
                             <th></th>
                             <th></th>
-                            {{--<th></th>--}}
+                            <th></th>
                         </tr>
                         </tfoot>
                         <tbody>
                         @foreach($historico as $res)
                             <tr>
-                                <td>{{$res->ejercicio}}</td>
                                 <td>{{$res->cod_programa.'-'.$res->cod_actividad.'-'.$res->cod_item}}</td>
                                 <td>{{$res->actividad}}</td>
                                 <td>{{$res->item}}</td>
-                                <td>{{$res->area}}</td>
-                                <td>$ {{number_format($res->planificado,2,'.','')}}</td>
-                                <td>$ {{number_format($res->extras,2,'.','')}} </td>
-                                <td>$ {{number_format(($res->devengado),2,'.','')}} </td>
-                                {{--<td>$ {{number_format(($res->cod_esigef),2,'.','')}} </td>--}}
+                                {{--<td>{{$res->area}}</td>--}}
+                                <td>$ {{number_format($res->aiMonto,2,'.','')}}</td>{{--actual con reformas--}}
+                                <td>$ {{number_format($res->ingresoExtra,2,'.','')}} </td>
+                                <td>$ {{number_format(($res->devengado),2,'.','')}} </td>  {{--con los extras--}}
+                                <td>$ {{number_format(($res->codificado),2,'.','')}} </td>
                             </tr>
                         @endforeach
                         </tbody>
@@ -125,7 +105,7 @@
         $(document).ready(function () {
 
             $(".form_noEnter").keypress(function (e) {
-                if (e.width == 13) {
+                if (e.which=== 13) {
                     return false;
                 }
             });
@@ -181,33 +161,40 @@
                                         i : 0;
                     };
                     // Total en todas las paginas
-                    total_plan = api.column(5).data().reduce(function (a, b) {
+                    total_plan = api.column(3).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
-                    total_ext = api.column(6).data().reduce(function (a, b) {
+                    total_ext = api.column(4).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
-                    total_devengado = api.column(7).data().reduce(function (a, b) {
+                    total_devengado = api.column(5).data().reduce(function (a, b) {
+                        return (intVal(a) + intVal(b)).toFixed(2);
+                    }, 0);
+                    total_codificado = api.column(6).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
 
 
                     // Total en la pagina actual
-                    pageTotal_plan = api.column(5, {page: 'current'}).data().reduce(function (a, b) {
+                    pageTotal_plan = api.column(3, {page: 'current'}).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
-                    pageTotal_ext = api.column(6, {page: 'current'}).data().reduce(function (a, b) {
+                    pageTotal_ext = api.column(4, {page: 'current'}).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
-                    pageTotal_dev = api.column(7, {page: 'current'}).data().reduce(function (a, b) {
+                    pageTotal_dev = api.column(5, {page: 'current'}).data().reduce(function (a, b) {
+                        return (intVal(a) + intVal(b)).toFixed(2);
+                    }, 0);
+                    pageTotal_codif = api.column(6, {page: 'current'}).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
 
 
                     // actualzar total en el pie de tabla
-                    $(api.column(5).footer()).html('$' + pageTotal_plan + '<p style="color: #0c199c">' + ' ( $' + total_plan + ' )' + '</p>');
-                    $(api.column(6).footer()).html('$' + pageTotal_ext + '<p style="color: #0c199c">' + ' ( $' + total_ext + ' )' + '</p>');
-                    $(api.column(7).footer()).html('$' + pageTotal_dev + '<p style="color: #0c199c">' + ' ( $' + total_devengado + ' )' + '</p>');
+                    $(api.column(3).footer()).html('$' + pageTotal_plan + '<p style="color: #0c199c">' + ' ( $' + total_plan + ' )' + '</p>');
+                    $(api.column(4).footer()).html('$' + pageTotal_ext + '<p style="color: #0c199c">' + ' ( $' + total_ext + ' )' + '</p>');
+                    $(api.column(5).footer()).html('$' + pageTotal_dev + '<p style="color: #0c199c">' + ' ( $' + total_devengado + ' )' + '</p>');
+                    $(api.column(6).footer()).html('$' + pageTotal_codif + '<p style="color: #0c199c">' + ' ( $' + total_codificado + ' )' + '</p>');
 
 
                 },

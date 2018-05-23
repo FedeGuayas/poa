@@ -93,7 +93,7 @@
 
             cargarDatatable();
             $(".form_noEnter").keypress(function (e) {
-                if (e.width == 13) {
+                if (e.which === 13) {
                     return false;
                 }
             });
@@ -147,7 +147,6 @@
                         },
                         error: function (response) {
                             row.show();
-                            console.log(response);
                             swal("ERROR!", response, "error");
                         }
                     });

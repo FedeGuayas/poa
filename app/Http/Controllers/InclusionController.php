@@ -22,6 +22,11 @@ use Illuminate\Support\Facades\Validator;
 
 class InclusionController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+        setlocale(LC_TIME, 'es_ES.utf8');
+    }
 
     /**
      * Vista para crear la planificacion de las inclusiones pac
@@ -289,7 +294,6 @@ class InclusionController extends Controller
         $pac_id = key($data);
         $pac = Pac::with('worker', 'area_item')->where('id', $pac_id)->first();
 
-        setlocale(LC_TIME, 'es');
         $fecha_actual = Carbon::now();
         $month = $fecha_actual->formatLocalized('%B');//mes en español
 
@@ -335,7 +339,6 @@ class InclusionController extends Controller
         $presupuesto = $request->input('presupuesto');
         $pac_id = $request->input('pac_id');
 
-        setlocale(LC_TIME, 'es');
         $fecha_actual = Carbon::now();
         $month = $fecha_actual->formatLocalized('%B');//mes en español
 
@@ -422,9 +425,6 @@ class InclusionController extends Controller
 
             if ($request->hasFile('incpac-file')) {
 
-                //elimino archivo anterior
-//                    $old_filename = public_path() . '/uploads/pac/srpac/' . $srpac->solicitud_file;
-//                    \File::delete($old_filename);
                 //almaceno el nuevo archivo
                 $file = $request->file('incpac-file');
                 $name = 'IncPac' . '' . $incpac->id . '-' . time() . '.' . $file->getClientOriginalExtension();

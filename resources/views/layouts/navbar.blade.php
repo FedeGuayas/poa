@@ -106,7 +106,12 @@
                         @permission('hacer-cierre')
                         <li role="presentation">
                             <a href="{{route('admin.historico.cierre')}}"><i class="fa fa-calendar-times-o" aria-hidden="true"></i>
-                                Cierre
+                                Cierre Mensual
+                            </a>
+                        </li>
+                        <li role="presentation">
+                            <a href="#"><i class="fa fa-calendar-times-o" aria-hidden="true"></i>
+                                Cierre Anual
                             </a>
                         </li>
                         @endpermission
@@ -171,7 +176,7 @@
                         </li>
                         <li role="presentation">
                             <a href="{{route('admin.inclusion')}}"><i class="fa fa-plus-square-o" aria-hidden="true"></i>
-                                Inclusión POA
+                                Inclusión
                             </a>
                         </li>
                         <li role="presentation">
@@ -192,7 +197,7 @@
 
                 <li class="dropdown">
                     <a class="dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
-                        PAC
+                        PROCESOS
                         <span class="caret"></span>
                     </a>
 
@@ -205,7 +210,7 @@
                         </li>
                         <li role="presentation">
                             <a href="{{route('indexIncPac')}}"><i class="fa fa-plus-square-o" aria-hidden="true"></i>
-                                Inclusión PAC
+                                Inclusión
                             </a>
                         </li>
                         @endpermission
@@ -249,7 +254,7 @@
                         Reportes</span><span class="caret"></span>
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a href="{{route('admin.reportes.resumen_mensual')}}"> Resumen mensual</a></li>
+                        <li><a href="{{route('admin.reportes.resumen_mensual')}}"> Estado actual</a></li>
                         <li><a href="{{route('admin.historico.index')}}"> Histórico</a></li>
                     </ul>
                 </li>

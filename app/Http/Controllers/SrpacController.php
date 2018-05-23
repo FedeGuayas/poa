@@ -21,6 +21,12 @@ use Illuminate\Support\Facades\Validator;
 class SrpacController extends Controller
 {
 
+    public function __construct()
+    {
+        $this->middleware('auth');
+        setlocale(LC_TIME, 'es_ES.utf8');
+    }
+
     /**
      * Crear Solicitud de reforma pac
      *
@@ -32,7 +38,7 @@ class SrpacController extends Controller
         $pac_id = key($data);
         $pac = Pac::with('worker', 'area_item')->where('id', $pac_id)->first();
 
-        setlocale(LC_TIME, 'es');
+
         $fecha_actual = Carbon::now();
         $month = $fecha_actual->formatLocalized('%B');//mes en español
 
@@ -98,7 +104,6 @@ class SrpacController extends Controller
         $pac_id_destino = $request->input('pac_id_destino');//arreglo
         $pac_id = $request->input('pac_origen_id');
 
-        setlocale(LC_TIME, 'es');
         $fecha_actual = Carbon::now();
         $month = $fecha_actual->formatLocalized('%B');//mes en español
 

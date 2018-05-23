@@ -15,6 +15,11 @@ use Illuminate\Support\Facades\Validator;
 
 class CpacController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+        setlocale(LC_TIME, 'es_ES.utf8');
+    }
     /**
      * Display a listing of the resource.
      *
@@ -99,7 +104,6 @@ class CpacController extends Controller
      */
     public function certificacionPDF(Request $request, $pac_id)
     {
-        setlocale(LC_TIME, 'es');
         $fecha_actual = Carbon::now();
         $month = $fecha_actual->formatLocalized('%B');//mes en español
 

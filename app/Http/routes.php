@@ -53,8 +53,6 @@ Route::group(['prefix' => 'admin','middleware'=>'auth'], function () {
     Route::get('item/ingresos{data?}',['uses'=>'ExtraController@loadExtra', 'as'=>'loadExtra']);
 
     Route::get('workers/departamento{data?}',['uses'=>'WorkerController@getDpto', 'as'=>'getDpto']);
-
-
    
 //    Route::get('pacs/lists/areas',['uses'=>'PacController@indexPacArea', 'as'=>'indexPacArea']);
     Route::get('pac/create/{area_item}',['uses'=>'PacController@createPac', 'as'=>'createPac']);
@@ -101,7 +99,7 @@ Route::group(['prefix' => 'admin','middleware'=>'auth'], function () {
     Route::put('pac/{pac_id}/to_reform',['uses'=>'PacController@permitReform','as'=>'pac.permitReform']);
 
 //borrar es para probar pdf del informe tecnico de la reforma
-//    Route::get('reform/{reforma}/informe',['uses'=>'ReformaController@verInformePDF', 'as'=>'admin.reforma.verinforme']);
+    Route::get('reform/{reforma}/informe',['uses'=>'ReformaController@verInformePDF', 'as'=>'admin.reforma.verinforme']);
 
     //area_item (poafdg) planificacion
     Route::get('poafdg/planificacion',['uses'=>'PoaController@poaFDG', 'as'=>'poaFDG']);

@@ -36,7 +36,7 @@
                             <th style="width: 150px;">Plan</th>
                             <th style="width: 150px;">Disp.</th>
                             <th style="width: 100px;">Mes</th>
-                            <th>PAC</th>
+                            <th>Acción</th>
                             </thead>
                             <tfoot>
                             <tr>
@@ -66,7 +66,7 @@
                                             @if ($ai->inclusion==\App\AreaItem::INCLUSION_NO)
                                                 <a href="{{route('createPac',$ai->id)}}"
                                                    class="btn btn-xs btn-success tip"
-                                                   data-placement="top" title="Procesos">
+                                                   data-placement="top" title="Crear Proceso">
                                                     <i class="fa fa-2x fa-money"></i>
                                                 </a>
                                             @endif
@@ -85,7 +85,7 @@
 
     <div class="col-md-12">
         <div class="panel panel-success">
-            <div class="panel-heading clearfix">PAC - {{count($area)>0 ? $area->area : ""}}
+            <div class="panel-heading clearfix">Procesos - {{count($area)>0 ? $area->area : ""}}
                 <a href="#!" class="btn-collapse pull-right" data-toggle="collapse" data-target="#resumen"
                    aria-expanded="false" aria-controls="resumen"><i class="fa fa-minus"></i></a>
             </div>
@@ -171,7 +171,7 @@
         $(document).ready(function () {
 
             $(".form_noEnter").keypress(function (e) {
-                if (e.which == 13) {
+                if (e.which === 13) {
                     return false;
                 }
             });
@@ -393,7 +393,7 @@
             var data = form.serialize();
             swal({
                     title: "Confirme para eliminar !",
-                    text: "Se eliminará el pac!. Esta acción no se podrá deshacer!",
+                    text: "Se eliminará el proceso!. Esta acción no se podrá deshacer!",
                     type: "info",
                     showCancelButton: true,
                     confirmButtonColor: "#DD6B55",

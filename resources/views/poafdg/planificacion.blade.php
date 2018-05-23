@@ -180,7 +180,6 @@
                     $("#monto_edit").val(response.monto);
                 },
                 error: function (response) {
-                    console.log(response);
                 }
             });
         };
@@ -209,12 +208,10 @@
                     swal("", response.message,"success");
                 },
                 error: function (response) {
-                    console.log(response);
                     var errors = response.responseJSON;
                     var error='';
                     if (errors) {
                         $.each(errors, function (i) {
-                            console.log(errors[i]);
                             error += errors[i] + '<br>';
                         });
                         swal("Error!", response.message,"success");
@@ -315,7 +312,6 @@
                         load.addClass('hidden');
                     },
                     error: function (response) {
-                        //console.log(response);
                         load.addClass('hidden');
                         act.find("option:gt(0)").remove();
                         item.find("option:gt(0)").remove();
@@ -356,7 +352,6 @@
                         load.addClass('hidden');
                     },
                     error: function (response) {
-                        //console.log(response);
                         load.addClass('hidden');
                         item.find("option:gt(0)").remove();
                         item.selectpicker("refresh");
@@ -390,7 +385,6 @@
                         //}
                     },
                     error: function (response) {
-                       // console.log(response);
                     }
                 });
             });
@@ -416,7 +410,6 @@
                         desglose_item.html(response);
                     },
                     error: function (response) {
-                        console.log(response);
                     }
                 });
             });

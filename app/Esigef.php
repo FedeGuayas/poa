@@ -1,12 +1,18 @@
 <?php
 
+/**
+ *  Modelo del Historico anual del Esigef
+ */
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
 class Esigef extends Model
 {
+    //protected $table = 'esigefs';
+    public $timestamps = false;
+
     protected $fillable = [
-        'ejercicio','cod_programa', 'cod_actividad', 'cod_item', 'programa', 'actividad', 'item', 'area', 'codificado', 'devengado', 'planificado', 'extras', 'mes'
+        'exercise_id','cod_programa', 'cod_actividad', 'cod_item', 'codificado', 'devengado','mes'
     ];
 }

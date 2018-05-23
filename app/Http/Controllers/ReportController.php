@@ -16,6 +16,8 @@ use App\Http\Requests;
 use DB;
 use Illuminate\Support\Collection as Collection;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Classes\PHPExcel;
+use Maatwebsite\Excel\Facades\Excel;
 
 
 class ReportController extends Controller
@@ -23,7 +25,7 @@ class ReportController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-
+        setlocale(LC_TIME, 'es_ES.utf8');
     }
 
     /**Resumen por mes y area
@@ -32,26 +34,26 @@ class ReportController extends Controller
     public function resumenMensual(Request $request)
     {
         if (Auth::user()->can('consultor')) {
-            setlocale(LC_TIME, 'es');
+
+            $fecha_actual = Carbon::now();
+            $month = $fecha_actual->month; //mes de la fecha actual : 1,2,3,4,....,12
 
             $meses = Month::select(DB::raw('month,cod'))->get();
             $list_meses = $meses->pluck('month', 'cod');
 
-            $mes = $request->input('mes');
+            $mes_cod = $request->input('mes'); //mes seleccionado de la lista
+            $nombre_mes = Month::select('month')->where('cod', $mes_cod)->first();//mes eleccionado
 
-            $fecha_actual = Carbon::now();
-//        $month = $fecha_actual->formatLocalized('%B');
-            $month = $fecha_actual->month;
-
-            if ($mes === null) {
-                $mes = $month;
+            if (is_null($nombre_mes)) {
+                $mes_actual = Month::where('cod', $month)->first();//mes actual
+                $mes = $mes_actual->month;
+            } else {
+                $mes = $nombre_mes->month;
             }
 
 //             DB::select( DB::raw("SELECT * FROM some_table WHERE some_col = '$someVariable'")
-
 //        DB::table('users')
 //            ->select('first_name', 'TotalCatches.*')
-//
 //            ->join(DB::raw('(SELECT user_id, COUNT(user_id) TotalCatch, DATEDIFF(NOW(), MIN(created_at)) Days, COUNT(user_id)/DATEDIFF(NOW(), MIN(created_at)) CatchesPerDay FROM `catch-text` GROUP BY user_id) TotalCatches'), function($join)
 //            {
 //                $join->on('users.id', '=', 'TotalCatches.user_id');
@@ -59,62 +61,42 @@ class ReportController extends Controller
 //            ->orderBy('TotalCatches.CatchesPerDay', 'DESC')
 //            ->get();
 
-
-//        "'Select cod_programa,cod_actividad,cod_item,planificado,extra, planificado+extra total,devengado from areas a
-// left join
-//        (select cod_programa,cod_actividad,cod_item,area_id,mes,sum(monto) planificado from area_item
-//   inner join items i on i.id=area_item.item_id
-//   GROUP BY area_id,mes ) ai on a.id=ai.area_id
-// left join
-//        (select mes,area_id,sum(monto) extra from extras GROUP BY area_id,mes ) e on e.area_id=a.id
-//left join
-//        (select programa,actividad,renglon,devengado from carga_inicial) ci on (ci.programa=ai.cod_programa and ci.actividad=ai.cod_actividad and ci.renglon=ai.cod_item)
-// where ai.mes='SEPTIEMBRE'"
-
-//        DB::raw('IFNULL(planificado+extra, planificado) total')
-
+            //muestra resumen del mes actual solamente con lo cargado de esigef
             $resumen = DB::table('areas as a')
-                ->select('cod_programa', 'cod_actividad', 'cod_item', 'planificado', 'area', 'ai.mes', DB::raw('IFNULL(extra, 0) extra'), DB::raw('IFNULL(planificado+extra, planificado) total'), 'devengado')
-//            ->where('ai.mes', 'like', '%' . $mes . '%')
                 ->join(DB::raw('
-                (SELECT ai.id,cod_programa,cod_actividad,cod_item,ai.area_id,mes,sum(monto) planificado, sum(devengado) devengado FROM area_item ai                  INNER JOIN items i ON i.id=ai.item_id 
-                INNER JOIN carga_inicial ci ON (i.cod_programa=ci.programa and i.cod_actividad=ci.actividad and i.cod_item=ci.renglon) 
+                (SELECT ai.id,ai.area_id,ai.item_id,mes,sum(monto) planificado, sum(devengado) devengado FROM area_item ai 
+                INNER JOIN items i ON i.id=ai.item_id 
+                INNER JOIN carga_inicial ci ON 
+                (i.cod_programa=ci.programa and i.cod_actividad=ci.actividad and i.cod_item=ci.renglon) 
                 GROUP BY area_id,mes) 
                 ai'
                 ), function ($join) {
                     $join->on('a.id', '=', 'ai.area_id');
                 })
-                ->leftJoin(DB::raw('(SELECT area_item_id,mes,area_id,sum(monto) extra from extras GROUP BY area_id,mes) e'), function ($join) {
-                    $join->on('e.area_id', '=', 'ai.area_id');
+                ->leftJoin(DB::raw('(SELECT e.area_id,e.mes,e.item_id,sum(e.monto) extra from areas a 
+                                    inner join extras as e on e.area_id=a.id 
+	                                group by area_id,mes) 
+	                                e'), function ($join) {
+                    $join->on('e.area_id', '=', 'a.id');
                     $join->on('e.mes', '=', 'ai.mes');
                 })
-                ->where('ai.mes', '=', $mes)
+                ->select('planificado', 'devengado', 'area', 'ai.mes', DB::raw('IFNULL(extra, 0) extra'), DB::raw('IFNULL(planificado+extra, planificado) total'), 'ai.area_id', 'e.mes')
+                ->where('ai.mes', '=', $month)
                 ->get();
 
-
-//dd($resumen);
+            //procesos
             $devengado_pacs = DB::table('area_item as ai')
                 ->join('pacs as p', 'p.area_item_id', '=', 'ai.id')
                 ->join('items as i', 'ai.item_id', '=', 'i.id')
                 ->join('areas as a', 'a.id', '=', 'ai.area_id')
                 ->join('workers as w', 'w.id', '=', 'p.worker_id')
                 ->join('departamentos as d', 'd.id', '=', 'w.departamento_id')
-                ->select('p.id', 'i.cod_item', 'i.cod_programa', 'i.cod_actividad', 'i.item', 'p.mes', 'p.presupuesto', 'p.disponible', 'p.comprometido', 'p.devengado', 'w.nombres', 'w.apellidos', 'a.area', 'p.procedimiento', 'p.concepto','d.area_id as area_trabajador')
+                ->select('p.id', 'i.cod_item', 'i.cod_programa', 'i.cod_actividad', 'i.item', 'p.mes', 'p.presupuesto', 'p.disponible', 'p.comprometido', 'p.devengado', 'w.nombres', 'w.apellidos', 'a.area', 'p.procedimiento', 'p.concepto', 'd.area_id as area_trabajador')
 //            ->where('ai.mes', 'like', '%' . $mes . '%')
-                ->where('ai.mes', '=', $mes)
+                ->where('ai.mes', '=', $mes_cod)
                 ->get();
 
-
-//        $total_esigef = Apertura::sum('devengado');
-//        $total_p = 0;
-//        $total_e = 0;
-//        foreach ($resumen as $r) {
-//            $total_p = $total_p + $r->planificado;
-////            $total_e = $total_e + $r->extra;
-//        }
-//        $total_mes = $total_p + $total_e;
-
-            $view = view('reportes.resumen_mensual', compact('mes', 'list_meses', 'resumen', 'devengado_pacs'));
+            $view = view('reportes.resumen_mensual', compact('mes', 'mes_cod', 'list_meses', 'resumen', 'devengado_pacs'));
             if ($request->ajax()) {
                 $sections = $view->rendersections();
                 return response()->json($sections['content']);
@@ -130,15 +112,6 @@ class ReportController extends Controller
      */
     public function reformaPDF($id)
     {
-//            $reforma = Reforma::with('pac_origen','pac_destino')
-//                ->join('area_item as ai', 'ai.id', '=', 'r.area_item_id')
-//                ->join('items as i', 'i.id', '=', 'ai.item_id')
-//                ->join('actividad_programa as ap', 'ap.id', '=', 'i.actividad_programa_id')
-//                ->join('programas as p', 'p.id', '=', 'ap.programa_id')
-//                ->join('actividads as a', 'a.id', '=', 'ap.actividad_id')
-//                ->select('p.programa', 'a.actividad', 'r.monto_orig', 'r.estado', 'ai.mes', 'i.cod_programa', 'i.cod_actividad', 'i.cod_item', 'i.item', 'i.grupo_gasto')
-//                ->where('id', $id)->first();
-
         $reforma = DB::table('reformas as r')
             ->join('area_item as ai', 'ai.id', '=', 'r.area_item_id')
             ->join('months as m', 'm.cod', '=', 'ai.mes')
@@ -146,9 +119,8 @@ class ReportController extends Controller
             ->join('actividad_programa as ap', 'ap.id', '=', 'i.actividad_programa_id')
             ->join('programas as p', 'p.id', '=', 'ap.programa_id')
             ->join('actividads as a', 'a.id', '=', 'ap.actividad_id')
-            ->select('p.programa', 'a.actividad', 'r.monto_orig', 'r.estado', 'm.month as mes', 'i.cod_programa', 'i.cod_actividad', 'i.cod_item', 'i.item', 'i.grupo_gasto','ai.area_id')
+            ->select('p.programa', 'a.actividad', 'r.monto_orig', 'r.estado', 'm.month as mes', 'i.cod_programa', 'i.cod_actividad', 'i.cod_item', 'i.item', 'i.grupo_gasto', 'ai.area_id')
             ->where('r.id', $id)->first();
-
 
         $area_id = $reforma->area_id;
 
@@ -186,22 +158,12 @@ class ReportController extends Controller
             ->where('r.id', $id)
             ->get();
 
-//            dd($detalles_d);
-
-        //setlocale(LC_TIME, 'es');
-        //$fecha_actual = Carbon::now();
-        //$month = $fecha_actual->formatLocalized('%B');//mes en español
-        //$day = $fecha_actual->format('d');
-        //$year = $fecha_actual->format('Y');
-        //$date = $fecha_actual->format('Y-m-d');
-
 //            PDF::loadHTML($html)->setPaper('a4', 'landscape')->setWarnings(false)->save('myfile.pdf')
-        $pdf = PDF::loadView('reportes.reforma-pdf', compact('reforma', 'detalles_o', 'detalles_d','jefe_area'));
+        $pdf = PDF::loadView('reportes.reforma-pdf', compact('reforma', 'detalles_o', 'detalles_d', 'jefe_area'));
         //        return $pdf->download('Refroma.pdf');//descarga el pdf
         return $pdf->setPaper('letter', 'landscape')->stream('Reforma');//imprime en pantalla
 
     }
-
 
     /**
      * imprimir las refroamas seleccionadas en pdf
@@ -210,9 +172,17 @@ class ReportController extends Controller
      */
     public function reformaSelectPDF(Request $request)
     {
-        if (count($request->input('imp_reformas')) == 0) {
+        //en caso que se de en el boton de exportar en excell y no el de pdf redireccionar a la funcion de exportar en excel
+        $exportar_excel = $request->get('imp_all_excel', false);
+        if ($exportar_excel) {
+            return $this->reformasAllExcel($request);
+        }
+
+        $reformas_id = $request->input('imp_reformas');//arreglo con los id de refromas
+
+        if (empty($reformas_id) || !isset($reformas_id)) {
             return redirect()->back()->with('message_danger', 'Debe seleccionar al menos una reforma para poder imprmir');
-        } else $reformas_id = $request->input('imp_reformas');//arreglo con los id de refromas
+        }
 
         $reforma = DB::table('reformas as r')
             ->join('area_item as ai', 'ai.id', '=', 'r.area_item_id')
@@ -222,11 +192,19 @@ class ReportController extends Controller
             ->join('actividad_programa as ap', 'ap.id', '=', 'i.actividad_programa_id')
             ->join('programas as p', 'p.id', '=', 'ap.programa_id')
             ->join('actividads as a', 'a.id', '=', 'ap.actividad_id')
-            ->select('p.programa', 'a.actividad', 'r.monto_orig', 'r.estado', 'rt.tipo_reforma', 'm.month as mes', 'i.cod_programa', 'i.cod_actividad', 'i.cod_item', 'i.item', 'i.grupo_gasto','ai.area_id')
+            ->select('p.programa', 'a.actividad', 'r.monto_orig', 'r.estado', 'rt.tipo_reforma', 'm.month as mes', 'i.cod_programa', 'i.cod_actividad', 'i.cod_item', 'i.item', 'i.grupo_gasto', 'ai.area_id')
             ->whereIn('r.id', $reformas_id)
             ->orderBy('r.id', 'desc')
             ->get();
 
+        $reforma2 = Reforma::from('reformas as r')
+            ->with('pac_origen', 'pac_destino', 'area_item', 'user', 'reform_type')
+            ->whereIn('r.id', $reformas_id)
+            ->orderBy('r.id', 'desc')
+            ->get();
+
+
+        //area a la que pertenece el usuario logueado
         $area_id = $request->user()->worker->departamento->area_id;
 
         //trabajadores que pertenecen al mismo area del trabajador logeado y esta en el departamento direccion (jefe de area)
@@ -235,8 +213,15 @@ class ReportController extends Controller
                 ->where('departamento', 'like', "%direcc%");
         })->first();
 
+        if (is_null($jefe_area)) {
+            return redirect()->back()->with('message_danger', 'No se encontró el jefe de área para el usuario logueado y este es necesario para la firma del autorizado del documento');
+        }
+
         $collection = Collection::make($reforma);
+
         $total_reforma = $collection->sum('monto_orig');
+
+        $total_reforma2 = $reforma2->sum('monto_orig');
 
         $detalles_o = DB::table('reformas as r')
             ->join('pac_origen as po', 'po.reforma_id', '=', 'r.id')
@@ -252,6 +237,13 @@ class ReportController extends Controller
 //            ->where('r.id', $id)
             ->orderBy('r.id', 'desc')
             ->get();
+
+        $detalles_o2 = Reforma::from('reformas as r')
+            ->with('pac_origen', 'area_item', 'user', 'reform_type')
+            ->whereIn('r.id', $reformas_id)
+            ->orderBy('r.id', 'desc')
+            ->get();
+
 
         $detalles_d = DB::table('reformas as r')
             ->join('pac_destino as pd', 'pd.reforma_id', '=', 'r.id')
@@ -288,7 +280,7 @@ class ReportController extends Controller
         $todas = DB::table('pac_destino as pd')
             ->select('o.valor_orig', 'o.cod_programa as cod_programa_o', 'o.cod_actividad as cod_actividad_o', 'o.programa as programa_o', 'o.actividad as actividad_o', 'o.cod_item as cod_item_o', 'o.item as item_o', 'o.mes as mes_o', 'i.cod_programa', 'i.cod_actividad', 'p.programa', 'a.actividad', 'pac.cod_item', 'pac.item', 'm.month as mes', 'pd.valor_dest')
             ->join('pacs as pac', 'pac.id', '=', 'pd.pac_id')
-            ->join('months as m', 'm.cod', '=','pac.mes')
+            ->join('months as m', 'm.cod', '=', 'pac.mes')
             ->join('area_item as ai', 'ai.id', '=', 'pac.area_item_id')
             ->join('items as i', 'i.id', '=', 'ai.item_id')
             ->join('programas as p', 'p.cod_programa', '=', 'i.cod_programa')
@@ -310,9 +302,373 @@ class ReportController extends Controller
             ->get();
 
 
-        $pdf = PDF::loadView('reportes.reforma_select_pdf', compact('reforma', 'detalles_o', 'detalles_d', 'total_reforma', 'todas','jefe_area'));
+        $pdf = PDF::loadView('reportes.reforma_select_pdf', compact('reforma', 'detalles_o', 'detalles_d', 'total_reforma', 'todas', 'jefe_area'));
         return $pdf->setPaper('letter', 'landscape')->stream('Reforma');//imprime en pantalla
 
 
     }
+
+    /**
+     * Exportar las reformas seleccionadas a plantilla en excel
+     *
+     * @param Request $request
+     */
+
+    public function reformasAllExcel(Request $request)
+    {
+//        if (Auth::user()->can('hacer-cierre')) {
+
+        $fecha_actual = Carbon::now();
+        $year = $fecha_actual->year;
+
+        $reformas_id = $request->input('imp_reformas');//arreglo con los id de refromas
+
+        if (empty($reformas_id) || !isset($reformas_id)) {
+            return redirect()->back()->with('message_danger', 'Debe seleccionar al menos una reforma para poder imprmir');
+        }
+
+        $reformas = Reforma::from('reformas as r')
+            ->with('pac_origen', 'pac_destino', 'area_item', 'user', 'reform_type')
+            ->whereIn('r.id', $reformas_id)
+            ->orderBy('r.id', 'desc')
+            ->get();
+
+        $user = $request->user();
+        //area a la que pertenece el usuario logueado
+        $area_id = $user->worker->departamento->area_id;
+
+        $elaborado_nombre = '';
+        $elaborado_cargo = '';
+        $elaborado_ci = '';
+        $aprobado_nombre = '';
+        $aprobado_cargo = '';
+        $aprobado_ci = '';
+
+        if ($user->hasRole('root') || $user->hasRole('administrador')) {
+            $elaborado_nombre = 'Ing. Xavier Omar Jacome Ortega';
+            $elaborado_cargo = 'Administrador Financiero';
+            $elaborado_ci = '0922385588';
+            $aprobado_nombre = 'Arq. Rosa Edith Rada Alprecht';
+            $aprobado_cargo = 'Administradora';
+            $aprobado_ci = '0902885979';
+        } elseif ($user->hasRole('analista')) {
+            //trabajadores que pertenecen al mismo area del trabajador logeado y esta en el departamento direccion (jefe de area)
+            $jefe_area = Worker::whereHas('departamento', function ($query) use ($area_id) {
+                $query->where('area_id', $area_id)
+                    ->where('departamento', 'like', "%direcc%");
+            })->first();
+
+            if (is_null($jefe_area)) {
+                return redirect()->back()->with('message_danger', 'No se encontró el jefe de área para el usuario logueado y este es necesario para la firma del autorizado del documento');
+            }
+
+            $elaborado_nombre = $user->worker->tratamiento . '. ' . $user->worker->getFullName();
+            $elaborado_cargo = $user->worker->cargo;
+            $elaborado_ci = $user->worker->num_doc;
+            $aprobado_nombre = $jefe_area->tratamiento . '. ' . $jefe_area->getFullName();
+            $aprobado_cargo = $jefe_area->cargo;
+            $aprobado_ci = $jefe_area->num_doc;
+
+        }
+
+        $total_reforma = $reformas->sum('monto_orig');
+
+        $reformasArray = [];
+        $cont = 0;
+        foreach ($reformas as $ref) {
+            foreach ($ref->pac_destino as $r_pd) {
+                $cont++;
+                $reformasArray[] = [
+                    'no1' => $cont,
+                    'programa_o' => $r_pd->pac->area_item->item->actividad_programa->programa->programa,
+                    'cod_atividad' => $r_pd->pac->area_item->item->cod_actividad . ' ' . $r_pd->pac->area_item->item->actividad_programa->actividad->actividad,
+                    'cod_item' => $r_pd->reforma->area_item->item->cod_item,
+                    'item' => $r_pd->reforma->area_item->item->item,
+                    'mes_o' => $r_pd->reforma->area_item->month->month,
+                    'monto_o' => '$ ' . number_format($r_pd->valor_dest, 2, '.', ' '),
+                    'no2' => $cont,
+                    'programa_d' => $r_pd->pac->area_item->item->actividad_programa->programa->programa,
+                    'cod_atividad_d' => $r_pd->pac->area_item->item->cod_actividad . ' ' . $r_pd->pac->area_item->item->actividad_programa->actividad->actividad,
+                    'cod_item_d' => $r_pd->pac->cod_item,
+                    'item_d' => $r_pd->pac->item,
+                    'mes_d' => $r_pd->pac->meses->month,
+                    'monto_d' => '$ ' . number_format($r_pd->valor_dest, 2, '.', ' ')
+                ];
+            }
+        }
+
+        Excel::create('Matriz de modificacion del POA ' . ' - ' . Carbon::now() . '', function ($excel) use ($reformasArray, $year, $total_reforma, $cont, $elaborado_nombre, $elaborado_cargo, $elaborado_ci, $aprobado_nombre, $aprobado_cargo, $aprobado_ci) {
+
+            $excel->sheet('Matriz', function ($sheet) use ($reformasArray, $year, $total_reforma, $cont, $elaborado_nombre, $elaborado_cargo, $elaborado_ci, $aprobado_nombre, $aprobado_cargo, $aprobado_ci) {
+
+                //ancho de columnas
+                $sheet->setWidth(['A' => 10.78, 'B' => 6.67, 'C' => 19.11, 'D' => 19.11, 'E' => 19.11, 'F' => 19.11, 'G' => 19.11, 'H' => 19.11,
+                    'I' => 6.67, 'J' => 19.11, 'K' => 19.11, 'L' => 19.11, 'M' => 19.11, 'N' => 19.11, 'O' => 19.11,
+                ]);
+
+                //insertar imagen
+                $objDrawing = new \PHPExcel_Worksheet_Drawing();
+                $objDrawing->setPath(public_path('images/ministerio.png')); //your image path
+                $objDrawing->setName('logo ministerio');
+                $objDrawing->setCoordinates('B2');
+                $objDrawing->setWidthAndHeight(140, 60);
+                $objDrawing->setWorksheet($sheet);
+
+                //encabezado
+                $sheet->row(2, ['', 'MINISTERIO DEL DEPORTE']);
+                $sheet->mergeCells('B2:O2');
+                //$sheet->setCellValue('A10', $value); //valor en una celda
+                $sheet->cells('B2:O2', function ($cells) { //en un rango de celdas
+//                        $cells->setFontColor('#ffffff');
+//                        $cells->setBackground('#404040');
+                    $cells->setFontWeight('bold');
+                    //alineacion horizontal
+                    $cells->setAlignment('center');
+                    // alineacion vertical
+                    $cells->setValignment('center');
+                    // tipo de letra
+//                        $cells->setFontFamily('Arial');
+                    // tamaño de letra
+//                        $cells->setFontSize(11);
+                    // bordes (top, right, bottom, left)
+//                    $cells->setBorder('solid', 'solid', 'solid', 'solid');
+                });
+
+                $sheet->row(3, ['', 'MATRIZ DE MODIFICACIÓN DEL PLAN OPERATIVO ANUAL ' . $year . ' ORGANISMOS DEPORTIVOS']);
+                $sheet->mergeCells('B3:O3');
+                $sheet->cells('B3:O3', function ($cells) {
+                    $cells->setFontWeight('bold');
+                    //alineacion horizontal
+                    $cells->setAlignment('center');
+                    // alineacion vertical
+                    $cells->setValignment('center');
+                });
+
+                $sheet->setBorder('B5:E5', 'thin');
+                $sheet->mergeCells('B5:E7');
+                $sheet->setCellValue('B5', 'Nombre del Organismo Deportivo:');
+                $sheet->cells('B5:E5', function ($cells) {
+                    $cells->setFontWeight('bold');
+                    //alineacion horizontal
+                    $cells->setAlignment('center');
+                    // alineacion vertical
+                    $cells->setValignment('center');
+//                        $cells->setValue('Nombre del Organismo Deportivo:');
+                });
+
+                $sheet->setBorder('F5:G5', 'thin');
+                $sheet->mergeCells('F5:G7');
+                $sheet->setCellValue('F5', 'FEDERACIÓN DEPORTIVA DEL GUAYAS');
+                $sheet->cells('F5:G5', function ($cells) {
+                    $cells->setFontWeight('bold');
+                    //alineacion horizontal
+                    $cells->setAlignment('center');
+                    // alineacion vertical
+                    $cells->setValignment('center');
+                });
+
+
+                $sheet->setBorder('B8:E8', 'thin');
+                $sheet->mergeCells('B8:E9');
+                $sheet->setCellValue('B8', 'Modificación al POA');
+                $sheet->cells('B8:E8', function ($cells) {
+                    $cells->setFontWeight('bold');
+                    //alineacion horizontal
+                    $cells->setAlignment('center');
+                    // alineacion vertical
+                    $cells->setValignment('center');
+                });
+
+
+                $sheet->setBorder('F8:G8', 'thin');
+                $sheet->mergeCells('F8:G9');
+                $sheet->setCellValue('F8', '$ ' . number_format($total_reforma, 2, '.', ' '));
+                $sheet->cells('F8:G8', function ($cells) {
+                    $cells->setFontWeight('bold');
+                    //alineacion horizontal
+                    $cells->setAlignment('center');
+                    // alineacion vertical
+                    $cells->setValignment('center');
+                });
+
+
+                $sheet->setBorder('B11:H11', 'thin');
+                $sheet->mergeCells('B11:H11');
+                $sheet->setCellValue('B11', 'Origen');
+                $sheet->cells('B11:H11', function ($cells) {
+//                        $cells->setFontColor('#ffffff');
+                    $cells->setBackground('#8DB4E2');
+                    $cells->setFontWeight('bold');
+                    //alineacion horizontal
+                    $cells->setAlignment('center');
+                    // alineacion vertical
+                    $cells->setValignment('center');
+                });
+
+                $sheet->setBorder('I11:O11', 'thin');
+                $sheet->mergeCells('I11:O11');
+                $sheet->setCellValue('I11', 'Destino');
+                $sheet->cells('I11:O11', function ($cells) {
+//                        $cells->setFontColor('#ffffff');
+                    $cells->setBackground('#C4D79B');
+                    $cells->setFontWeight('bold');
+                    //alineacion horizontal
+                    $cells->setAlignment('center');
+                    // alineacion vertical
+                    $cells->setValignment('center');
+                });
+
+                $sheet->getRowDimension(12)->setRowHeight(28.8);
+                $sheet->getStyle('B12:O12')->getAlignment()->setWrapText(true);
+
+                $sheet->setBorder('B12:O12', 'thin');
+                $sheet->cells('B12:O12', function ($cells) {
+                    $cells->setBackground('#CCC0DA');
+                    $cells->setFontWeight('bold');
+                    //alineacion horizontal
+                    $cells->setAlignment('center');
+                    // alineacion vertical
+                    $cells->setValignment('center');
+
+                });
+                $sheet->setCellValue('B12', 'No.');
+                $sheet->setCellValue('C12', 'Programa');
+                $sheet->setCellValue('D12', 'Número de Actividad');
+                $sheet->setCellValue('E12', 'Código Ítem Presupuestario');
+                $sheet->setCellValue('F12', 'Nombre del ítem Presupuestario');
+                $sheet->setCellValue('G12', 'Mes Programado');
+                $sheet->setCellValue('H12', 'Monto / Disminución');
+                $sheet->setCellValue('I12', 'No.');
+                $sheet->setCellValue('J12', 'Programa');
+                $sheet->setCellValue('K12', 'Número de Actividad');
+                $sheet->setCellValue('L12', 'Código Ítem Presupuestario');
+                $sheet->setCellValue('M12', 'Nombre del ítem Presupuestario');
+                $sheet->setCellValue('N12', 'Mes Programado');
+                $sheet->setCellValue('o12', 'Monto / Incremento');
+
+                $fila = 12;
+
+                for ($i = 0; $i < $cont; $i++) {
+                    $fila++;
+                    $sheet->appendRow($fila, function ($row) use ($fila){
+                        //alineacion horizontal
+                        $row->setAlignment('left');
+//                        // alineacion vertical
+                        $row->setValignment('center');
+                        // tamaño de letra
+                        $row->setFontSize(9);
+                    });
+                    $sheet->setBorder('B' . $fila . ':O' . $fila . '', 'thin');
+                    $sheet->getStyle('B' . $fila . ':O' . $fila . '')->getAlignment()->setWrapText(true);
+                }
+
+                $fila = $fila + 1;
+                $sheet->setBorder('B' . $fila . ':G' . $fila . '', 'thin');
+                $sheet->mergeCells('B' . $fila . ':G' . $fila . '');
+                $sheet->setCellValue('B' . $fila . '', 'TOTAL DISMINUCIÓN');
+                $sheet->cells('B' . $fila . ':G' . $fila . '', function ($cells) {
+//                        $cells->setFontColor('#ffffff');
+                    $cells->setBackground('#8DB4E2');
+                    $cells->setFontWeight('bold');
+                    //alineacion horizontal
+                    $cells->setAlignment('center');
+                    // alineacion vertical
+                    $cells->setValignment('center');
+                });
+
+                $sheet->setBorder('H' . $fila . '', 'thin');
+                $sheet->setCellValue('H' . $fila . '', '$ ' . number_format($total_reforma, 2, '.', ' '));
+                $sheet->cells('H' . $fila . '', function ($cells) {
+//                        $cells->setFontColor('#ffffff');
+                    $cells->setBackground('#8DB4E2');
+                    $cells->setFontWeight('bold');
+                    //alineacion horizontal
+                    $cells->setAlignment('center');
+                    // alineacion vertical
+                    $cells->setValignment('center');
+                });
+
+                $sheet->setBorder('I' . $fila . ':N' . $fila . '', 'thin');
+                $sheet->mergeCells('I' . $fila . ':N' . $fila . '');
+                $sheet->setCellValue('I' . $fila . '', 'TOTAL INCREMENTO');
+                $sheet->cells('I' . $fila . ':N' . $fila . '', function ($cells) {
+//                        $cells->setFontColor('#ffffff');
+                    $cells->setBackground('#C4D79B');
+                    $cells->setFontWeight('bold');
+                    //alineacion horizontal
+                    $cells->setAlignment('center');
+                    // alineacion vertical
+                    $cells->setValignment('center');
+                });
+
+                $sheet->setBorder('O' . $fila . '', 'thin');
+                $sheet->setCellValue('O' . $fila . '', '$ ' . number_format($total_reforma, 2, '.', ' '));
+                $sheet->cells('O' . $fila . '', function ($cells) {
+//                        $cells->setFontColor('#ffffff');
+                    $cells->setBackground('#C4D79B');
+                    $cells->setFontWeight('bold');
+                    //alineacion horizontal
+                    $cells->setAlignment('center');
+                    // alineacion vertical
+                    $cells->setValignment('center');
+                });
+
+                $fila = $fila + 3;
+                $sheet->mergeCells('B' . $fila . ':C' . $fila . '');
+                $sheet->setCellValue('B' . $fila . '', 'Elaborado por:');
+
+                $sheet->mergeCells('I' . $fila . ':J' . $fila . '');
+                $sheet->setCellValue('I' . $fila . '', 'Autorizado por:');
+
+                $fila = $fila + 3;
+                $sheet->mergeCells('B' . $fila . ':E' . $fila . '');
+                $sheet->setCellValue('B' . $fila . '', '_______________________________________');
+
+                $sheet->mergeCells('I' . $fila . ':L' . $fila . '');
+                $sheet->setCellValue('I' . $fila . '', '_______________________________________');
+
+                $fila = $fila + 1;
+                $sheet->mergeCells('B' . $fila . ':E' . $fila . '');
+                $sheet->setCellValue('B' . $fila . '', 'Nombre: ' . $elaborado_nombre . '');
+
+                $sheet->mergeCells('I' . $fila . ':L' . $fila . '');
+                $sheet->setCellValue('I' . $fila . '', 'Nombre: ' . $aprobado_nombre . '');
+
+                $fila = $fila + 1;
+                $sheet->mergeCells('B' . $fila . ':E' . $fila . '');
+                $sheet->setCellValue('B' . $fila . '', 'Cargo: ' . $elaborado_cargo . '');
+
+                $sheet->mergeCells('I' . $fila . ':L' . $fila . '');
+                $sheet->setCellValue('I' . $fila . '', 'Cargo: ' . $aprobado_cargo . '');
+
+                $fila = $fila + 1;
+                $sheet->mergeCells('B' . $fila . ':E' . $fila . '');
+                $sheet->setCellValue('B' . $fila . '', 'CI: ' . $elaborado_ci . '');
+
+                $sheet->mergeCells('I' . $fila . ':L' . $fila . '');
+                $sheet->setCellValue('I' . $fila . '', 'CI: ' . $aprobado_ci . '');
+
+
+                // Set all margins
+//                $sheet->setPageMargin(0.25);
+                // Set top, right, bottom, left margins
+                $sheet->setPageMargin(array(
+                    0.25, 0.30, 0.25, 0.30
+                ));
+
+
+                //crear la hoja a partir del array
+                //5to parametro false pasa como encabesado de la primera fila los nombres de las columnas
+                //4to parametro true, muestra cero como 0, sino muestar celda vacia
+                $sheet->fromArray($reformasArray, null, 'B13', true, false);
+
+            });
+
+            $lastrow= $excel->getActiveSheet()->getHighestRow();
+            $excel->getActiveSheet()->getStyle('A1:J'.$lastrow)->getAlignment()->setWrapText(true);
+
+        })->export('xlsx');
+
+    }
+
 }

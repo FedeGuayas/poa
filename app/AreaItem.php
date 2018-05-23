@@ -26,11 +26,6 @@ class AreaItem extends Model
         return $this->hasMany('App\Reforma');
     }
 
-    public function extras()
-    {
-        return $this->hasMany('App\Extra');
-    }
-
     public function item()
     {
         return $this->belongsTo('App\Item');

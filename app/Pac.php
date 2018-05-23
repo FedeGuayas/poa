@@ -36,6 +36,11 @@ class Pac extends Model
         return $this->belongsTo('App\AreaItem');
     }
 
+    public function meses()
+    {
+        return $this->belongsTo('App\Month','mes');
+    }
+
     public function worker()
     {
         return $this->belongsTo('App\Worker');

@@ -85,11 +85,6 @@ class PacController extends Controller
     {
         $user_login = $request->user();
 
-//        @if ( ( (Auth::user()->worker_id==$pac->trabajador_id) && Auth::user()->hasRole('responsable-pac') ||
-//            (Auth::user()->worker->departamento->area_id==$pac->area_trabajador && (Auth::user()->hasRole('analista') || Auth::user()->hasRole('responsable-poa'))) ) ||
-//        (Auth::user()->hasRole('root') || Auth::user()->hasRole('administrador')))
-
-
         $fecha_actual = Carbon::now();
         $mes_actual = $fecha_actual->month;
 
@@ -105,8 +100,6 @@ class PacController extends Controller
         if (is_null($area_select)) {
             $area_select = $user_login->worker->departamento->area_id;
         }
-
-//        dd($area_select);
 
         $area = Area::where('id', $area_select)->first();
 
@@ -127,8 +120,19 @@ class PacController extends Controller
 
         $pacs = collect($pacs);//convierto a colleccion para poder utilizar map()
 
+        //Filtro para enviar a la vusta solo lo necesario
+        $pacs = $pacs->filter(function ($item, $key) use ($user_login) {
+            //   Si el usuario autenticado es el dueño del proceso y si tiene el role (responsable-pac),
+            //   o el trabajador pertenece al area que se asigno el pac y es analista o responsable-poa,
+            //   o  es root, administrador o financiero, mostrarlo
+            if ( (($user_login->worker_id == $item->trabajador_id) && $user_login->hasRole('responsable-pac') || ($user_login->worker->departamento->area_id == $item->area_trabajador && ($user_login->hasRole('analista') || $user_login->hasRole('responsable-poa'))) ) || ($user_login->hasRole('root') || $user_login->hasRole('administrador') || $user_login->hasRole('financiero')) ) {
+                return true;
+            } else return false;
+        })->values();
+
 //            recorro cada elemento de la coleccion para agregar un nuevo elemento donde indico si tiene un CPAC, cert presup, srpac, inclusion
         $pacs->map(function ($pac) use ($user_login) {
+
             $cpac = Cpac::where('pac_id', $pac->id)->select('certificado', 'status')->get()->last(); //ultimo pdf de CPAC subido
             $cpresup = Cpresupuestaria::where('pac_id', $pac->id)->select('cert_presup', 'status')->get()->last(); //ultimo pdf de Cert Presup. subido
             $srpac = Srpac::where('pac_id', $pac->id)->select('solicitud_file', 'status')->get()->last(); //ultimo pdf de Srpac subido
@@ -165,8 +169,8 @@ class PacController extends Controller
             $pac->srpac_status = $sol_rpac_status; //status archivo srpac
             $pac->inclusion_file = $incl_pac_file; //archivo  inclusion pac
             $pac->inclusion_file_status = $incl_pac_status; //status archivo  inclusion pac
-            return $pac;
 
+            return $pac;
         });
 
         return view('pac.index', compact('list_areas', 'list_reformas', 'pacs', 'area_select', 'area', 'mes_actual'));
@@ -193,14 +197,6 @@ class PacController extends Controller
                 ->select('i.cod_item', 'i.cod_programa', 'i.cod_actividad', 'i.item')
                 ->where('ai.id', $id)
                 ->first();
-
-//        $workers = Worker::
-//        join('departamentos as d', 'd.id', '=', 'w.departamento_id', 'as w')
-//            ->join('areas as a', 'a.id', '=', 'd.area_id')
-//            ->join('area_item as ai', 'ai.area_id', '=', 'a.id')
-//            ->select(DB::raw('concat (w.nombres," ",w.apellidos) as trabajador,w.id as id'))
-//            ->where('ai.id', $id)
-//            ->get();
 
             $workers = Worker::select(DB::raw('concat (nombres," ",apellidos) as nombre,id'))->get();
             $list_workers = $workers->pluck('nombre', 'id');
@@ -315,17 +311,6 @@ class PacController extends Controller
 
             //maximo que se puede distribuir al responsable de este pac
             $total_disponible = $area_item->monto - $pac_presupuesto;
-
-            //trabajadores del area del pac
-//            $workers = Worker::
-//            join('departamentos as d', 'd.id', '=', 'w.departamento_id', 'as w')
-//                ->join('areas as a', 'a.id', '=', 'd.area_id')
-//                ->join('area_item as ai', 'ai.area_id', '=', 'a.id')
-//                ->join('pacs as p', 'p.area_item_id', '=', 'ai.id')
-//                ->select(DB::raw('concat (w.nombres," ",w.apellidos) as trabajador,w.id as id'))
-//                ->where('a.id', $pac->area_item->area_id)
-//                ->get();
-//            $list_workers = $workers->pluck('trabajador', 'id');
 
             $workers = Worker::select(DB::raw('concat (nombres," ",apellidos) as nombre,id'))->get();
             $list_workers = $workers->pluck('nombre', 'id');
@@ -686,7 +671,7 @@ class PacController extends Controller
 
         if ($validator->fails()) {
             if ($request->ajax()) {
-                return response()->json(['errors'=>$validator->messages()], 422);
+                return response()->json(['errors' => $validator->messages()], 422);
             } else {
                 return back()->withErrors($validator)->withInput();
             }
@@ -724,9 +709,9 @@ class PacController extends Controller
 
 
             DB::commit();
-            $message='Se subió la certificación presupuestaria correctamente. Se envió una notificación por correo al responsable del proceso.';
+            $message = 'Se subió la certificación presupuestaria correctamente. Se envió una notificación por correo al responsable del proceso.';
             if ($request->ajax()) {
-                return response()->json(['message'=>$message], 200);
+                return response()->json(['message' => $message], 200);
             } else {
                 return back()->with(['message' => $message]);
             }
@@ -734,7 +719,7 @@ class PacController extends Controller
         } catch (\Exception $exception) {
             DB::rollback();
             if ($request->ajax()) {
-                return response()->json(['message_error'=>'Error crítico: '.$exception->getMessage().'']);
+                return response()->json(['message_error' => 'Error crítico: ' . $exception->getMessage() . '']);
             } else {
                 return back()->with('message_danger', $exception->getMessage());
             }
@@ -790,7 +775,7 @@ class PacController extends Controller
         });
 
         if (Mail::failures()) {
-            $message='Ocurrio un error al enviar la notificación';
+            $message = 'Ocurrio un error al enviar la notificación';
             return back()->with(['message_danger' => $message]);
         }
     }

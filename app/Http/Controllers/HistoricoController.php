@@ -112,7 +112,6 @@ class HistoricoController extends Controller
      */
     public function cierre(Request $request)
     {
-
         if (Auth::user()->can('hacer-cierre')) {
 
             $fecha_actual = Carbon::now();
@@ -158,8 +157,7 @@ class HistoricoController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public
-    function create()
+    public function create()
     {
 
     }
@@ -170,35 +168,37 @@ class HistoricoController extends Controller
      * @param  \Illuminate\Http\Request $request
      * @return \Illuminate\Http\Response
      */
-    public
-    function store(Request $request)
+    public function store(Request $request)
     {
         if (Auth::user()->can('hacer-cierre')) {
+
             if ($request->input('mes') == 'placeholder') {
                 return redirect()->route('admin.historico.cierre')->withInput()->with('message_danger', 'Seleccione el mes para el cierre');
             }
 
             $fecha_actual = Carbon::now();
-            //$month = $fecha_actual->formatLocalized('%B');
-            $year = $fecha_actual->year;
+            $year = $fecha_actual->year; //2018
 
-            $ejercicio = Exercise::where('ejercicio', $year)->first();
+            $ejercicio = Exercise::where('ejercicio', $year)->first(); //(id=1, ejercicio=2018)
 
-            $mes_cod = $request->input('mes');
-            $mes_actual = Month::where('cod', $mes_cod)->first();//mes eleccionado
+            $mes_cod = $request->input('mes'); //2, 3, 4, ....
+            $mes_select = Month::where('cod', $mes_cod)->first();//mes seleccionado
 
-            if (isset($mes_actual)) {
-                $mes = $mes_actual->month;
+            if (isset($mes_select)) {
+                $mes = $mes_select->month; //Febrero, Marzo, etc
             }
 
             $historico = Esigef::where('mes', $mes_cod)->where('exercise_id', $ejercicio->id)->first();
 
-            if (count($historico) > 0) {
+            //ya existe historico de ese mes guardado preguntra por actualizacion
+            if (isset($historico)) {
                 return response()->json([
-                    "response" => 'Ya existe un cierre del mes ' . $mes . ' para el ejercicio ' . $ejercicio->ejercicio . '',
-                    "tipo" => "error"
+                    "response" => 'Ya existe un cierre del mes ' . $mes . ' para el ejercicio ' . $ejercicio->ejercicio . '. Desea actualizar la información ?',
+                    "tipo" => "existe"
                 ]);
             }
+
+            //encaso de que no exita el mes guardao en el historico continuar
 
             //Esigef cargado con los items planificados inicialmente para cierre mensual del dev de esigef
             $esigef_items = DB::table('carga_inicial as ci')
@@ -212,7 +212,6 @@ class HistoricoController extends Controller
                 ->select('ci.ejercicio', 'ci.programa as esigefPrograma', 'ci.actividad as esigefActividad', 'ci.renglon as esigefItem', 'ci.codificado as esigefCodificado', 'ci.devengado as esigefDevengado', 'i.id as item_id', 'i.cod_programa', 'prog.programa', 'i.cod_actividad', 'act.actividad', 'i.cod_item', 'grupo_gasto', 'i.item', DB::raw('IFNULL (i.presupuesto,0) itemPresupuesto'), DB::raw('IFNULL(i.disponible,0) itemDisponible'))
                 ->where('ci.ejercicio', $year)
                 ->get();
-
 
             if (count($esigef_items) <= 0) {
                 return response()->json([
@@ -242,8 +241,9 @@ class HistoricoController extends Controller
 
                 DB::commit();
                 return response()->json([
-                    "response" => "Se realizo el cierre correctamente"
+                    "response" => 'Se realizo el cierre correspondiente al mes de ' . $mes . ' correctamente.',
                 ]);
+
             } catch (\Exception $e) {
                 DB::rollback();
                 return response()->json([
@@ -252,8 +252,94 @@ class HistoricoController extends Controller
                     "tipo" => "error"
                 ]);
             }
+
         } else return abort(403);
     }
+
+    /**
+     * Actualizar historico existente
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+
+    public function actualizarHistorico(Request $request)
+    {
+        $fecha_actual = Carbon::now();
+        $year = $fecha_actual->year; //2018
+        $ejercicio = Exercise::where('ejercicio', $year)->first(); //(id=1, ejercicio=2018)
+        $mes_cod = $request->input('mes'); //2, 3, 4, ....
+        $mes_select = Month::where('cod', $mes_cod)->first();//mes seleccionado
+        if (isset($mes_select)) {
+            $mes = $mes_select->month; //Febrero, Marzo, etc
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $historico_mes = Esigef::where('mes', $mes_cod)->where('exercise_id', $ejercicio->id)->get()->toArray();
+
+            $ids_to_delete = array_map(function ($item) {
+                return $item['id'];
+            }, $historico_mes);
+
+            DB::table('esigefs')->whereIn('id', $ids_to_delete)->delete();
+
+            $esigef_items = DB::table('carga_inicial as ci')
+                ->leftjoin('items as i', function ($join) { //items
+                    $join->on('ci.programa', '=', 'i.cod_programa');
+                    $join->on('ci.actividad', '=', 'i.cod_actividad');
+                    $join->on('ci.renglon', '=', 'i.cod_item');
+                })
+                ->leftJoin('actividads as act', 'act.cod_actividad', '=', 'i.cod_actividad')
+                ->leftJoin('programas as prog', 'prog.cod_programa', '=', 'i.cod_programa')
+                ->select('ci.ejercicio', 'ci.programa as esigefPrograma', 'ci.actividad as esigefActividad', 'ci.renglon as esigefItem', 'ci.codificado as esigefCodificado', 'ci.devengado as esigefDevengado', 'i.id as item_id', 'i.cod_programa', 'prog.programa', 'i.cod_actividad', 'act.actividad', 'i.cod_item', 'grupo_gasto', 'i.item', DB::raw('IFNULL (i.presupuesto,0) itemPresupuesto'), DB::raw('IFNULL(i.disponible,0) itemDisponible'))
+                ->where('ci.ejercicio', $year)
+                ->get();
+
+            if (count($esigef_items) <= 0) {
+                return response()->json([
+                    "response" => 'No existen datos para guardar en el mes ' . $mes,
+                    "tipo" => "error"
+                ]);
+            }
+
+            $insert = [];
+
+            foreach ($esigef_items as $key => $value) {
+                $insert[] = [
+                    "exercise_id" => $ejercicio->id,
+                    "cod_programa" => $value->esigefPrograma,
+                    "cod_actividad" => $value->esigefActividad,
+                    "cod_item" => $value->esigefItem,
+                    "codificado" => $value->esigefCodificado,
+                    "devengado" => $value->esigefDevengado,
+                    "mes" => $mes_cod
+                ];
+            }
+
+            if (!empty($insert)) {
+                DB::table('esigefs')->insert($insert);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                "response" => 'Se actualizo el cierre correspondiente al mes de ' . $mes . ' correctamente',
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                "response" => "Ha ocurrido un error, no se pudo realizar el cierre",
+//                       "response" => $e->getMessage(),
+                "tipo" => "error"
+            ]);
+        }
+
+
+    }
+
 
     /**
      * Display the specified resource.
@@ -261,8 +347,7 @@ class HistoricoController extends Controller
      * @param  int $id
      * @return \Illuminate\Http\Response
      */
-    public
-    function show($id)
+    public function show($id)
     {
         //
     }
@@ -382,9 +467,9 @@ class HistoricoController extends Controller
                     'cod_act' => $hm->cod_actividad,
                     'cod_it' => $hm->cod_item,
                     'item' => $hm->item,
-                    'plan' => $hm->aiMonto != 0 ? (float)$hm->aiMonto : '-',
-                    'devengado' => $dev != 0 ? (float)$dev : '-',
-                    'diferencia' => $dif == 0 ? '-' : $dif
+                    'plan' => (float)$hm->aiMonto,
+                    'devengado' => (float)$dev,
+                    'diferencia' =>  $dif
                 ];
             }
 
@@ -526,15 +611,15 @@ class HistoricoController extends Controller
                 ->get()->toArray();
 
             //historico guardado
-            $esigef=Esigef::from('esigefs as eg')
-                ->select('eg.cod_programa', 'eg.cod_actividad', 'eg.cod_item', 'eg.mes','eg.devengado')
-                ->where('exercise_id',$ejercicio)
+            $esigef = Esigef::from('esigefs as eg')
+                ->select('eg.cod_programa', 'eg.cod_actividad', 'eg.cod_item', 'eg.mes', 'eg.devengado')
+                ->where('exercise_id', $ejercicio)
                 ->get()->toArray();
 
             //extras
-            $extras=Extra::from('extras as e')
+            $extras = Extra::from('extras as e')
                 ->select('e.item_id', 'e.area_id', 'e.mes', DB::raw('sum(e.monto) as monto'))
-                ->groupBy('e.item_id','e.mes')
+                ->groupBy('e.item_id', 'e.mes')
                 ->get()->toArray();
 
 //            $historico_mes1 = Esigef::
@@ -582,138 +667,138 @@ class HistoricoController extends Controller
 //                ->get();
 
 
-            $hist_array[] = ['RESPONSABLE', 'PROGRAMA', 'ACTIVIDAD', 'ITEM', 'NOMBRE DEL ITEM','VALOR ANUAL', 'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE', 'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE', 'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+            $hist_array[] = ['RESPONSABLE', 'PROGRAMA', 'ACTIVIDAD', 'ITEM', 'NOMBRE DEL ITEM', 'VALOR ANUAL', 'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE', 'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE', 'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
 
             foreach ($historico_mes as $hm) {
                 //planificado area_item poafdg
-                $p_ene=$p_feb=$p_mar=$p_abr=$p_may=$p_jun=$p_jul=$p_ago=$p_sep=$p_oct=$p_nov=$p_dic=0;
-                foreach ($area_item as  $value) {
-                    if ( $hm->itemID==$value['item_id']){
-                        switch ($value['mes']){
+                $p_ene = $p_feb = $p_mar = $p_abr = $p_may = $p_jun = $p_jul = $p_ago = $p_sep = $p_oct = $p_nov = $p_dic = 0;
+                foreach ($area_item as $value) {
+                    if ($hm->itemID == $value['item_id']) {
+                        switch ($value['mes']) {
                             case 1:
-                                $p_ene=$value['monto'];
+                                $p_ene = $value['monto'];
                                 break;
                             case 2:
-                                $p_feb=$value['monto'];
+                                $p_feb = $value['monto'];
                                 break;
                             case 3:
-                                $p_mar=$value['monto'];
+                                $p_mar = $value['monto'];
                                 break;
                             case 4:
-                                $p_abr=$value['monto'];
+                                $p_abr = $value['monto'];
                                 break;
                             case 5:
-                                $p_may=$value['monto'];
+                                $p_may = $value['monto'];
                                 break;
                             case 6:
-                                $p_jun=$value['monto'];
+                                $p_jun = $value['monto'];
                                 break;
                             case 7:
-                                $p_jul=$value['monto'];
+                                $p_jul = $value['monto'];
                                 break;
                             case 8:
-                                $p_ago=$value['monto'];
+                                $p_ago = $value['monto'];
                                 break;
                             case 9:
-                                $p_sep=$value['monto'];
+                                $p_sep = $value['monto'];
                                 break;
                             case 10:
-                                $p_oct=$value['monto'];
+                                $p_oct = $value['monto'];
                                 break;
                             case 11:
-                                $p_nov=$value['monto'];
+                                $p_nov = $value['monto'];
                                 break;
                             case 12:
-                                $p_dic=$value['monto'];
+                                $p_dic = $value['monto'];
                                 break;
                         }
                     }
                 }
                 //devengado de esigef guardado
-                $dev_ene=$dev_feb=$dev_mar=$dev_abr=$dev_may=$dev_jun=$dev_jul=$dev_ago=$dev_sep=$dev_oct=$dev_nov=$dev_dic=0;
-                foreach ($esigef as  $value) {
-                    if ( $hm->cod_programa==$value['cod_programa'] && $hm->cod_actividad==$value['cod_actividad'] && $hm->cod_item==$value['cod_item']){
-                        switch ($value['mes']){
+                $dev_ene = $dev_feb = $dev_mar = $dev_abr = $dev_may = $dev_jun = $dev_jul = $dev_ago = $dev_sep = $dev_oct = $dev_nov = $dev_dic = 0;
+                foreach ($esigef as $value) {
+                    if ($hm->cod_programa == $value['cod_programa'] && $hm->cod_actividad == $value['cod_actividad'] && $hm->cod_item == $value['cod_item']) {
+                        switch ($value['mes']) {
                             case 1:
-                                $dev_ene=$value['devengado'];
+                                $dev_ene = $value['devengado'];
                                 break;
                             case 2:
-                                $dev_feb=$value['devengado'];
+                                $dev_feb = $value['devengado'];
                                 break;
                             case 3:
-                                $dev_mar=$value['devengado'];
+                                $dev_mar = $value['devengado'];
                                 break;
                             case 4:
-                                $dev_abr=$value['devengado'];
+                                $dev_abr = $value['devengado'];
                                 break;
                             case 5:
-                                $dev_may=$value['devengado'];
+                                $dev_may = $value['devengado'];
                                 break;
                             case 6:
-                                $dev_jun=$value['devengado'];
+                                $dev_jun = $value['devengado'];
                                 break;
                             case 7:
-                                $dev_jul=$value['devengado'];
+                                $dev_jul = $value['devengado'];
                                 break;
                             case 8:
-                                $dev_ago=$value['devengado'];
+                                $dev_ago = $value['devengado'];
                                 break;
                             case 9:
-                                $dev_sep=$value['devengado'];
+                                $dev_sep = $value['devengado'];
                                 break;
                             case 10:
-                                $dev_oct=$value['devengado'];
+                                $dev_oct = $value['devengado'];
                                 break;
                             case 11:
-                                $dev_nov=$value['devengado'];
+                                $dev_nov = $value['devengado'];
                                 break;
                             case 12:
-                                $dev_dic=$value['devengado'];
+                                $dev_dic = $value['devengado'];
                                 break;
                         }
                     }
                 }
 
                 //extras
-                $e_ene=$e_feb=$e_mar=$e_abr=$e_may=$e_jun=$e_jul=$e_ago=$e_sep=$e_oct=$e_nov=$e_dic=0;
-                foreach ($extras as  $value) {
-                    if ( $hm->itemID==$value['item_id']){
-                        switch ($value['mes']){
+                $e_ene = $e_feb = $e_mar = $e_abr = $e_may = $e_jun = $e_jul = $e_ago = $e_sep = $e_oct = $e_nov = $e_dic = 0;
+                foreach ($extras as $value) {
+                    if ($hm->itemID == $value['item_id']) {
+                        switch ($value['mes']) {
                             case 1:
-                                $e_ene=$value['monto'];
+                                $e_ene = $value['monto'];
                                 break;
                             case 2:
-                                $e_feb=$value['monto'];
+                                $e_feb = $value['monto'];
                                 break;
                             case 3:
-                                $e_mar=$value['monto'];
+                                $e_mar = $value['monto'];
                                 break;
                             case 4:
-                                $e_abr=$value['monto'];
+                                $e_abr = $value['monto'];
                                 break;
                             case 5:
-                                $e_may=$value['monto'];
+                                $e_may = $value['monto'];
                                 break;
                             case 6:
-                                $e_jun=$value['monto'];
+                                $e_jun = $value['monto'];
                                 break;
                             case 7:
-                                $e_jul=$value['monto'];
+                                $e_jul = $value['monto'];
                                 break;
                             case 8:
-                                $e_ago=$value['monto'];
+                                $e_ago = $value['monto'];
                                 break;
                             case 9:
-                                $e_sep=$value['monto'];
+                                $e_sep = $value['monto'];
                                 break;
                             case 10:
-                                $e_oct=$value['monto'];
+                                $e_oct = $value['monto'];
                                 break;
                             case 11:
-                                $e_nov=$value['monto'];
+                                $e_nov = $value['monto'];
                                 break;
                             case 12:
-                                $e_dic=$value['monto'];
+                                $e_dic = $value['monto'];
                                 break;
                         }
                     }
@@ -725,43 +810,43 @@ class HistoricoController extends Controller
                     'cod_act' => $hm->cod_actividad,
                     'cod_it' => $hm->cod_item,
                     'item' => $hm->item,
-                    'val_anual'=>$hm->aiMonto,
-                    'p_ene' => $p_ene != 0 ? (float)$p_ene : '-',
-                    'p_feb' => $p_feb != 0 ? (float)$p_feb : '-',
-                    'p_mar' => $p_mar != 0 ? (float)$p_mar : '-',
-                    'p_abr' => $p_abr != 0 ? (float)$p_abr : '-',
-                    'p_may' => $p_may != 0 ? (float)$p_may : '-',
-                    'p_jun' => $p_jun != 0 ? (float)$p_jun : '-',
-                    'p_jul' => $p_jul != 0 ? (float)$p_jul : '-',
-                    'p_ago' => $p_ago != 0 ? (float)$p_ago : '-',
-                    'p_sep' => $p_sep != 0 ? (float)$p_sep : '-',
-                    'p_oct' => $p_oct != 0 ? (float)$p_oct : '-',
-                    'p_nov' => $p_nov != 0 ? (float)$p_nov : '-',
-                    'p_dic' => $p_dic != 0 ? (float)$p_dic : '-',
-                    'dev_ene' => $dev_ene-$e_ene != 0 ? (float)$dev_ene-$e_ene : '-',
-                    'dev_feb' => $dev_feb-$e_feb != 0 ? (float)$dev_feb-$e_feb : '-',
-                    'dev_mar' => $dev_mar-$e_mar != 0 ? (float)$dev_mar-$e_mar : '-',
-                    'dev_abr' => $dev_abr-$e_abr != 0 ? (float)$dev_abr-$e_abr : '-',
-                    'dev_may' => $dev_may-$e_may != 0 ? (float)$dev_may-$e_may : '-',
-                    'dev_jun' => $dev_jun-$e_jun != 0 ? (float)$dev_jun-$e_jun : '-',
-                    'dev_jul' => $dev_jul-$e_jul != 0 ? (float)$dev_jul-$e_jul : '-',
-                    'dev_ago' => $dev_ago-$e_ago != 0 ? (float)$dev_ago-$e_ago : '-',
-                    'dev_sep' => $dev_sep-$e_sep != 0 ? (float)$dev_sep-$e_sep : '-',
-                    'dev_oct' => $dev_oct-$e_oct != 0 ? (float)$dev_oct-$e_oct : '-',
-                    'dev_nov' => $dev_nov-$e_nov != 0 ? (float)$dev_nov-$e_nov : '-',
-                    'dev_dic' => $dev_dic-$e_dic != 0 ? (float)$dev_dic-$e_dic : '-',
-                    'dif_ene' => $p_ene-($dev_ene-$e_ene)  == 0 ? '-' : (float)$p_ene-($dev_ene-$e_ene),
-                    'dif_feb' => $p_feb-($dev_feb-$e_feb)  == 0 ? '-' : (float)$p_feb-($dev_feb-$e_feb),
-                    'dif_mar' => $p_mar-($dev_mar-$e_mar)  == 0 ? '-' : (float)$p_mar-($dev_mar-$e_mar),
-                    'dif_abr' => $p_abr-($dev_abr-$e_abr)  == 0 ? '-' : (float)$p_abr-($dev_abr-$e_abr),
-                    'dif_may' => $p_may-($dev_may-$e_may)  == 0 ? '-' : (float)$p_may-($dev_may-$e_may),
-                    'dif_jun' => $p_jun-($dev_jun-$e_jun)  == 0 ? '-' : (float)$p_jun-($dev_jun-$e_jun),
-                    'dif_jul' => $p_jul-($dev_jul-$e_jul)  == 0 ? '-' : (float)$p_jul-($dev_jul-$e_jul),
-                    'dif_ago' => $p_ago-($dev_ago-$e_ago)  == 0 ? '-' : (float)$p_ago-($dev_ago-$e_ago),
-                    'dif_sep' => $p_sep-($dev_sep-$e_sep)  == 0 ? '-' : (float)$p_sep-($dev_sep-$e_sep),
-                    'dif_oct' => $p_oct-($dev_oct-$e_oct)  == 0 ? '-' : (float)$p_oct-($dev_oct-$e_oct),
-                    'dif_nov' => $p_nov-($dev_nov-$e_nov)  == 0 ? '-' : (float)$p_nov-($dev_nov-$e_nov),
-                    'dif_dic' => $p_dic-($dev_dic-$e_dic)  == 0 ? '-' : (float)$p_dic-($dev_dic-$e_dic),
+                    'val_anual' => $hm->aiMonto,
+                    'p_ene' =>  (float)$p_ene,
+                    'p_feb' =>  (float)$p_feb,
+                    'p_mar' =>  (float)$p_mar,
+                    'p_abr' =>  (float)$p_abr,
+                    'p_may' =>  (float)$p_may,
+                    'p_jun' =>  (float)$p_jun,
+                    'p_jul' =>  (float)$p_jul,
+                    'p_ago' =>  (float)$p_ago,
+                    'p_sep' =>  (float)$p_sep,
+                    'p_oct' =>  (float)$p_oct,
+                    'p_nov' =>  (float)$p_nov,
+                    'p_dic' =>  (float)$p_dic,
+                    'dev_ene' =>  (float)$dev_ene - $e_ene,
+                    'dev_feb' =>  (float)$dev_feb - $e_feb,
+                    'dev_mar' => (float)$dev_mar - $e_mar,
+                    'dev_abr' =>  (float)$dev_abr - $e_abr,
+                    'dev_may' =>  (float)$dev_may - $e_may,
+                    'dev_jun' =>  (float)$dev_jun - $e_jun,
+                    'dev_jul' =>  (float)$dev_jul - $e_jul,
+                    'dev_ago' =>  (float)$dev_ago - $e_ago,
+                    'dev_sep' =>  (float)$dev_sep - $e_sep,
+                    'dev_oct' =>  (float)$dev_oct - $e_oct,
+                    'dev_nov' => (float)$dev_nov - $e_nov,
+                    'dev_dic' =>  (float)$dev_dic - $e_dic,
+                    'dif_ene' =>  (float)$p_ene - ($dev_ene - $e_ene),
+                    'dif_feb' =>  (float)$p_feb - ($dev_feb - $e_feb),
+                    'dif_mar' =>  (float)$p_mar - ($dev_mar - $e_mar),
+                    'dif_abr' =>  (float)$p_abr - ($dev_abr - $e_abr),
+                    'dif_may' =>  (float)$p_may - ($dev_may - $e_may),
+                    'dif_jun' =>  (float)$p_jun - ($dev_jun - $e_jun),
+                    'dif_jul' =>  (float)$p_jul - ($dev_jul - $e_jul),
+                    'dif_ago' =>  (float)$p_ago - ($dev_ago - $e_ago),
+                    'dif_sep' =>  (float)$p_sep - ($dev_sep - $e_sep),
+                    'dif_oct' =>  (float)$p_oct - ($dev_oct - $e_oct),
+                    'dif_nov' =>  (float)$p_nov - ($dev_nov - $e_nov),
+                    'dif_dic' =>  (float)$p_dic - ($dev_dic - $e_dic),
                 ];
             }
 
@@ -816,9 +901,9 @@ class HistoricoController extends Controller
                         $cells->setFontSize(11);
                     });
 
-                    $sheet->mergeCells('S1:AB1');
+                    $sheet->mergeCells('S1:AD1');
                     $sheet->setCellValue('S1', 'DEVENGADO ESIGEF');
-                    $sheet->cells('S1:AB1', function ($cells) {
+                    $sheet->cells('S1:AD1', function ($cells) {
                         $cells->setFontColor('#ffffff');
                         $cells->setBackground('#00B050');
                         $cells->setFontWeight('bold');
@@ -827,7 +912,7 @@ class HistoricoController extends Controller
                         $cells->setFontFamily('Arial');
                         $cells->setFontSize(11);
                     });
-                    $sheet->cells('S2:AB2', function ($cells) {
+                    $sheet->cells('S2:AD2', function ($cells) {
                         $cells->setFontColor('#ffffff');
                         $cells->setBackground('#00B050');
                         $cells->setFontWeight('bold');
@@ -881,7 +966,7 @@ class HistoricoController extends Controller
 
                     // Set multiple column formats
                     $sheet->setColumnFormat(array(
-                        'F:AO' => '#,##0.00'
+                        'F:AP' => '#,##0.00'
                     ));
 
                     //crear la hoja a partir del array

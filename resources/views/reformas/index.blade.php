@@ -16,45 +16,56 @@
         <table class="table table-striped table-bordered table-condensed table-hover" id="reformas_table"
                cellspacing="0" style="display: none; font-size: 10px;" data-order='[[ 0, "desc" ]]'>
             <thead>
-            <th style="width: 30px;">No.</th>
-            <th >Dirección</th>
-            <th style="width: 70px;">Valor_Origen</th>
-            <th style="width: 60px;">Mes</th>
-            <th style="width: 70px;">Código</th>
-            <th style="width: 70px;">Tipo</th>
-            <th>Nomb. Item</th>
-            <th style="width: 70px;">Valor_Destino</th>
-            <th>Monto/Mes</th>
-            <th style="width: 70px;">Cod Destino</th>
-            <th>Ejecutor</th>
-            <th style="width: 50px;">Estado</th>
-            <th style="width: 120px;">Acción</th>
-            <th>
-                {!! Form::checkbox('imp_all',null,false,['id'=>'imp_all']) !!}
-                {!! Form::label('imp_all','Todos') !!}
-            </th>
+            <tr>
+                <th style="width: 20px;">No.</th>
+                <th>Dirección</th>
+                <th>Ejecutor</th>
+                <th style="width: 70px;">Valor_Origen</th>
+                <th style="width: 60px;">Mes</th>
+                <th style="width: 70px;">Código</th>
+                <th>Nomb. Item</th>
+                <th style="width: 70px;">Valor_Destino</th>
+                <th style="width: 90px;">Monto/Mes</th>
+                <th style="width: 70px;">Cod Destino</th>
+                <th style="width: 70px;">Tipo</th>
+                <th style="width: 50px;">Estado</th>
+                <th>
+                    {!! Form::checkbox('inf_all',null,false,['id'=>'inf_all']) !!}
+                    {!! Form::label('inf_all','Informes') !!}
+                </th>
+                <th style="width: 70px;">Acción</th>
+                <th>
+                    {!! Form::checkbox('imp_all',null,false,['id'=>'imp_all']) !!}
+                    {!! Form::label('imp_all','Matriz') !!}
+                </th>
+            </tr>
             </thead>
             <tfoot>
             <tr>
-                <th class="search-filter">filtrar</th>
-                <th class="search-filter">filtrar</th>
-                <th></th>
-                <th class="search-filter">filtrar</th>
-                <th class="search-filter">filtrar</th>
-                <th class="search-filter">filtrar</th>
-                <th class="search-filter">filtrar</th>
-                <th></th>
-                <th></th>
-                <th class="search-filter"></th>
-                <th></th>
-                <th class="search-filter">filtrar</th>
-                <th></th>
-                <th>
+                <td class="tfoot_search">No.</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td class="tfoot_search">Mes</td>
+                <td class="tfoot_search">Código Orig.</td>
+                <td class="tfoot_search">Item</td>
+                <td></td>
+                <td></td>
+                <td class="tfoot_search">Código Dest.</td>
+                <td class="tfoot_select"></td>
+                <td class="tfoot_select"></td>
+                <td align="center">
                     @permission('imprimir-reformas')
-                    {{--{!! Form::button('<i class="fa fa fa-file-pdf-o" aria-hidden="true"></i>',['class'=>'btn-xs btn-danger tip','data-placement'=>'top', 'title'=>'Imprimir PDF','type'=>'submit','id'=>'imp_all_pdf','target'=>'_blank','name'=>'imp_all_pdf','value'=>'imp_all_pdf']) !!}--}}
-                    {!! Form::button('<i class="fa fa fa-file-excel-o" aria-hidden="true"></i>',['class'=>'btn-xs btn-success tip','data-placement'=>'top', 'title'=>'Imprimir Excel','type'=>'submit','id'=>'imp_all_excel','target'=>'_blank','name'=>'imp_all_excel','value'=>'imp_all_excel']) !!}
+                    {!! Form::button('<i class="fa fa-file-word-o" aria-hidden="true"></i>',['class'=>'btn-xs btn-info tip','data-placement'=>'top', 'title'=>'Generar Informe','type'=>'submit','id'=>'gen_informe','target'=>'_blank','name'=>'gen_informe','value'=>'gen_informe']) !!}
                     @endpermission
-                </th>
+                </td>
+                <td></td>
+                <td align="center">
+                    @permission('imprimir-reformas')
+                    {{--{!! Form::button('<i class="fa fa-file-pdf-o" aria-hidden="true"></i>',['class'=>'btn-xs btn-danger tip','data-placement'=>'top', 'title'=>'Imprimir PDF','type'=>'submit','id'=>'imp_all_pdf','target'=>'_blank','name'=>'imp_all_pdf','value'=>'imp_all_pdf']) !!}--}}
+                    {!! Form::button('<i class="fa fa-file-excel-o" aria-hidden="true"></i>',['class'=>'btn-xs btn-success tip','data-placement'=>'top', 'title'=>'Imprimir Excel','type'=>'submit','id'=>'imp_all_excel','target'=>'_blank','name'=>'imp_all_excel','value'=>'imp_all_excel']) !!}
+                    @endpermission
+                </td>
             </tr>
             </tfoot>
             <tbody>
@@ -63,67 +74,85 @@
                               o  es root o administrador, mostrarlo--}}
 
                 @if ( ( (Auth::user()->worker->departamento->area_id==$reforma->aiID && (Auth::user()->hasRole('analista') || Auth::user()->hasRole('responsable-poa'))) ) || (Auth::user()->hasRole('root') || Auth::user()->hasRole('administrador')))
-                <tr>
-                    <td>{{$reforma->id}}</td>
-                    <td>{{$reforma->area}}</td>
-                    <td>$ {{$reforma->monto_orig}}</td>
-                    <td>{{$reforma->mes}}</td>
-                    <td>{{$reforma->cod_programa.'-'.$reforma->cod_actividad.'-'.$reforma->cod_item}}</td>
-                    <td>{{$reforma->tipo_reforma}}</td>
-                    <td>{{$reforma->item}}</td>
-                    <td>${{$reforma->total_destino}}</td>
-                    <td>
-                        @foreach($reforma->pac_destino as $pd)
-                            ${{$pd->valor_dest.' / '.$pd->pac->meses->month}}<br/>
-                        @endforeach
-                    </td>
-                    <td>
-                        @foreach($reforma->pac_destino as $pd)
-                            {{$pd->pac->area_item->item->cod_programa.'-'.$pd->pac->area_item->item->cod_actividad.'-'.$pd->pac->area_item->item->cod_item}}<br/>
-                        @endforeach
-                    </td>
-                    <td>{{$reforma->nombres.' '.$reforma->apellidos}} </td>
-                    <td>
+                    <tr>
+                        <td>{{$reforma->id}}</td>
+                        <td>{{$reforma->area}}</td>
+                        <td>{{$reforma->nombres.' '.$reforma->apellidos}} </td>
+                        <td>$ {{$reforma->monto_orig}}</td>
+                        <td>{{$reforma->mes}}</td>
+                        <td>{{$reforma->cod_programa.'-'.$reforma->cod_actividad.'-'.$reforma->cod_item}}</td>
+                        <td>{{$reforma->item}}</td>
+                        <td>${{$reforma->total_destino}}</td>
+                        <td>
+                            @foreach($reforma->pac_destino as $pd)
+                                ${{$pd->valor_dest.' / '.$pd->pac->meses->month}}<br/>
+                            @endforeach
+                        </td>
+                        <td>
+                            @foreach($reforma->pac_destino as $pd)
+                                {{$pd->pac->area_item->item->cod_programa.'-'.$pd->pac->area_item->item->cod_actividad.'-'.$pd->pac->area_item->item->cod_item}}
+                                <br/>
+                            @endforeach
+                        </td>
+                        <td>{{$reforma->tipo_reforma}}</td>
                         @if ($reforma->estado==\App\Reforma::REFORMA_PENDIENTE)
-                            <span class="label label-warning">Pendiente</span>
+                            <td style="color: #ff4b1c">
+                                Pendiente
+                            </td>
                         @elseif($reforma->estado==\App\Reforma::REFORMA_APROBADA)
-                            <span class="label label-success">Aprobada</span>
+                            <td style="color:#108114">
+                                Aprobada
+                            </td>
                         @endif
-                    <td>
-                        @permission('admin-reformas')
-                        @if ($reforma->estado== \App\Reforma::REFORMA_PENDIENTE)
-                            <a href="#!" class="btn btn-xs btn-primary tip aprobar" data-placement="top" title="Aprobar"
-                               data-id="{{$reforma->id}}"><i
-                                        class="fa fa-check-square-o" aria-hidden="true"></i>
+                        <td>
+                        {{--@if($reforma->estado==\App\Reforma::REFORMA_APROBADA)--}}
+                                {{--<a href="#">--}}
+                                    {{--{!! Form::button('<i class="fa fa fa-download" aria-hidden="true"></i>',['class'=>'btn-xs btn-success tip','data-placement'=>'top', 'title'=>'Descargar Informe','type'=>'submit','target'=>'_blank']) !!}--}}
+                                {{--</a>--}}
+                        {{--@endif--}}
+                            <a href="#!">
+                                {!! Form::checkbox('select_informes[]',$reforma->id,false,['id'=>'I'.$reforma->id]) !!}
+                                {{--{!! Form::label($reforma->id, $reforma->id) !!}--}}
                             </a>
-                            <a href="#!" class="btn btn-xs btn-danger tip delete" data-placement="top" title="Cancelar"
-                               data-id="{{$reforma->id}}"><i class="fa fa-ban" aria-hidden="true"></i>
+                        </td>
+                        <td>
+                            @permission('admin-reformas')
+                            @if ($reforma->estado== \App\Reforma::REFORMA_PENDIENTE)
+                                <a href="#!" class="btn btn-xs btn-primary tip aprobar" data-placement="top"
+                                   title="Aprobar"
+                                   data-id="{{$reforma->id}}"><i
+                                            class="fa fa-check-square-o" aria-hidden="true"></i>
+                                </a>
+                                <a href="#!" class="btn btn-xs btn-danger tip delete" data-placement="top"
+                                   title="Cancelar"
+                                   data-id="{{$reforma->id}}"><i class="fa fa-ban" aria-hidden="true"></i>
+                                </a>
+                            @endif
+                            @endpermission
+                            <a href="#!" class="btn btn-xs btn-info tip" data-placement="top" title="Detalle"
+                               {{--data-toggle="modal" data-target="#show-modal" --}}
+                               onclick="showDetalles({{$reforma->id}})"><i class="fa fa-eye"></i>
                             </a>
-                        @endif
-                        @endpermission
-                        <a href="#!" class="btn btn-xs btn-info tip" data-placement="top" title="Detalle"
-                           {{--data-toggle="modal" data-target="#show-modal" --}}
-                           onclick="showDetalles({{$reforma->id}})"><i class="fa fa-eye"></i>
-                        </a>
-                        {{--@permission('imprimir-reformas')--}}
-                        {{--<a href="{{route('admin.reportes.reforma-pdf',$reforma->id)}}"--}}
-                           {{--class="btn btn-xs btn-warning tip" data-placement="top" title="Imprimir" target="_blank">--}}
+                            {{--@permission('imprimir-reformas')--}}
+                            {{--<a href="{{route('admin.reportes.reforma-pdf',$reforma->id)}}"--}}
+                            {{--class="btn btn-xs btn-warning tip" data-placement="top" title="Imprimir" target="_blank">--}}
                             {{--<i class="fa fa-file-pdf-o"></i>--}}
-                        {{--</a>--}}
-                        {{--@endpermission--}}
-                        {{--<a href="#!" class="btn btn-xs btn-success tip" data-placement="top" title="Editar">--}}
+                            {{--</a>--}}
+                            {{--@endpermission--}}
+                            {{--<a href="#!" class="btn btn-xs btn-success tip" data-placement="top" title="Editar">--}}
                             {{--<i class="fa fa-edit"></i>--}}
-                        {{--</a>--}}
-                    </td>
-                    <td>
-                        @permission('imprimir-reformas')
-                        <a href="#!">
-                            {!! Form::checkbox('imp_reformas[]',$reforma->id,false,['id'=>$reforma->id]) !!}
-                            {{--{!! Form::label($reforma->id, $reforma->id) !!}--}}
-                        </a>
-                        @endpermission
-                    </td>
-                </tr>
+                            {{--</a>--}}
+                        </td>
+
+                        <td>
+                            @permission('imprimir-reformas')
+                            <a href="#!">
+                                {!! Form::checkbox('imp_reformas[]',$reforma->id,false,['id'=>'R'.$reforma->id]) !!}
+                                {{--{!! Form::label($reforma->id, $reforma->id) !!}--}}
+                            </a>
+                            @endpermission
+                        </td>
+                    </tr>
                 @endif
             @endforeach
             </tbody>
@@ -153,6 +182,12 @@
                 }
             });
 
+            //texto de input para filtrar
+            $('.tfoot_search').each(function () {
+                var title = $(this).text();
+                $(this).html('<input type="text" style="width: 100%" placeholder="' + title + '" />');
+            });
+
             var table = $("#reformas_table").DataTable({
                 lengthMenu: [[5, 10, -1], [5, 10, 'Todo']],
                 "language": {
@@ -178,29 +213,56 @@
                         "sortAscending": ": Activar para ordenar ascendentemente",
                         "sortDescending": ": Activar para ordenar descendentemente"
                     }
+                },
+                "columnDefs": [
+                    { "orderable": false, "targets": [8,12,13,14] }
+                ]
+                ,
+                initComplete: function () {
+                    this.api().columns().every(function () {
+                        var column = this;
+                        //input text
+                        if ($(column.footer()).hasClass('tfoot_search')) {
+                            //aplicar la busquedad
+                            var that = this;
+                            $('input', this.footer()).on('keyup change', function () {
+                                if (that.search() !== this.value) {
+                                    that.search(this.value).draw();
+                                }
+                            });
+
+                        }
+                        else if ($(column.footer()).hasClass('tfoot_select')) { //select
+                            var column = this;
+                            //aplicar la busquedad
+                            var select = $('<select style="width: 100%"><option value=""></option></select>')
+                                .appendTo($(column.footer()).empty())
+                                .on('change', function () {
+                                    var val = $.fn.dataTable.util.escapeRegex(
+                                        $(this).val()
+                                    );
+                                    column.search(val ? '^' + val + '$' : '', true, false).draw();
+                                });
+
+                            column.data().unique().sort().each(function (d, j) {
+                                console.log(d);
+                                select.append('<option value="' + d + '">' + d + '</option>')
+                            });
+                        }
+                    });
                 }
             });
-
             $("#reformas_table").fadeIn();
-
-            $('#reformas_table .search-filter').each(function () {
-                var title = $(this).text();
-                $(this).html('<input type="text" style="width: 100%" placeholder="' + title + '" />');
-            });
-
-            table.columns().every(function () {
-                var that = this;
-                $('input', this.footer()).on('keyup change', function () {
-                    if (that.search() !== this.value) {
-                        that.search(this.value).draw();
-                    }
-                });
-            });
-
         });
 
+        //seleccionar todos los check para excel
         $(document).on('change', '#imp_all', function (event) {
-            $("input:checkbox").prop('checked', $(this).prop("checked"));
+            $("input[name='imp_reformas[]']").prop('checked', $(this).prop("checked"));
+        });
+
+        //seleccionar todos los check para informe
+        $(document).on('change', '#inf_all', function (event) {
+            $("input[name='select_informes[]']").prop('checked', $(this).prop("checked"));
         });
 
         $(document).on('mouseover', '.tip', function (event) {

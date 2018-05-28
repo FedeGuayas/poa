@@ -44,5 +44,10 @@ class Reforma extends Model
     {
         return $this->belongsTo('App\ReformType');
     }
+
+    public function informe()
+    {
+        return $this->belongsTo('App\Informe');
+    }
     
 }

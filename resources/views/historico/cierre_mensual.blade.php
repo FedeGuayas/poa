@@ -264,6 +264,7 @@
         function cierre() {
             var token = $("input[name=_token]").val();
             var route = "{{route('admin.historico.store')}}";
+            var route_update = "{{route('admin.actualizarHistorico')}}";
             var mes = $("#mes").val();
             var mes_name = $("#mes option:selected").text();
             var data = {
@@ -272,7 +273,7 @@
             if (mes != '') {
                 swal({
                     title: "",
-                    text: "Se realizará el cierre del mes de " + mes_name + " !, seguro desea continuar?",
+                    text: "Se realizará el cierre del mes de " + mes_name + " ! Seguro desea continuar?",
                     type: "warning",
                     showCancelButton: true,
                     confirmButtonColor: "#DD6B55",
@@ -282,7 +283,7 @@
                     closeOnCancel: false,
                     showLoaderOnConfirm: true
                 }, function (isConfirm) {
-                    if (isConfirm) {
+                    if (isConfirm) { //confirma el cierre, store
                         $.ajax({
                             url: route,
                             type: "POST",
@@ -290,9 +291,49 @@
                             dataType: 'json',
                             data: data,
                             success: function (response) {
-                                if (response.tipo == "error") {
+
+                                if (response.tipo === "existe") { //actualizarHistorico
+//                                    swal("Error", response.response, "warning");
+                                     //Actualizar cierre existente? ya existe cierre del mes seleccionado
+                                    /************************/
+                                    swal({
+                                        title: "",
+                                        text: response.response ,
+                                        type: "info",
+                                        showCancelButton: true,
+                                        confirmButtonColor: "#DD6B55",
+                                        confirmButtonText: "SI!",
+                                        cancelButtonText: " NO!",
+                                        closeOnConfirm: false,
+                                        closeOnCancel: false,
+                                        showLoaderOnConfirm: true
+                                    }, function (isConfirm) {
+                                        if (isConfirm) {//confirma atualizacion de cierre
+                                            $.ajax({
+                                                url: route_update,
+                                                type: "POST",
+                                                headers: {'X-CSRF-TOKEN': token},
+                                                dataType: 'json',
+                                                data: data,
+                                                success: function (response) {
+                                                    if (response.tipo == "error") { //actualizacion correcta
+                                                        swal("Error", response.response, "error");
+                                                    } else swal("", response.response, "success");
+                                                },
+                                                error: function (response) {
+                                                }
+                                            });
+                                        }//isConfirm
+                                        else {
+                                            swal("", "Cancelo la actualización del historico", "error");
+                                        }
+                                    });
+                                    //Fin Actualizar cierre existente
+                                    /************************/
+                                }else if (response.tipo === "error") {
                                     swal("Error", response.response, "error");
-                                } else swal("", response.response, "success");
+                                }
+                                else swal("", response.response, "success");
                             },
                             error: function (response) {
                             }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Apertura;
+use App\Informe;
 use App\Month;
 use App\Reforma;
 use App\Worker;
@@ -18,6 +19,9 @@ use Illuminate\Support\Collection as Collection;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Classes\PHPExcel;
 use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpWord\Element\Section;
+use PhpOffice\PhpWord\IOFactory;
+use PhpOffice\PhpWord\PhpWord;
 
 
 class ReportController extends Controller
@@ -166,7 +170,9 @@ class ReportController extends Controller
     }
 
     /**
-     * imprimir las refroamas seleccionadas en pdf
+     * imprimir las reformas seleccionadas en pdf
+     *
+     * Este metodo no se esta utilizando solo las primeras lineas para llamar a otros metodos
      * @param $id
      * @return mixed
      */
@@ -177,6 +183,13 @@ class ReportController extends Controller
         if ($exportar_excel) {
             return $this->reformasAllExcel($request);
         }
+
+        //en caso que se de en el boton de generar informe redireccionar a la funcion generar_informe
+        $generar_informe = $request->get('gen_informe', false);
+        if ($generar_informe) {
+            return $this->generarInformeT($request);
+        }
+
 
         $reformas_id = $request->input('imp_reformas');//arreglo con los id de refromas
 
@@ -260,23 +273,6 @@ class ReportController extends Controller
             ->orderBy('pd.id', 'desc')
             ->get();
 
-
-//        SELECT pd.id,pd.reforma_id,pd.pac_id,pac.area_item_id,o.valor_orig,o.cod_programa,o.cod_actividad,o.programa,o.actividad,o.cod_item,o.item,o.mes,i.cod_programa,i.cod_actividad,p.programa,a.actividad,pac.cod_item,pac.item,pac.mes,pd.valor_dest FROM pac_destino pd
-//join pacs pac on pac.id =pd.pac_id
-//join area_item ai on ai.id=pac.area_item_id
-//join items i on i.id=ai.item_id
-//join programas p on p.cod_programa=i.cod_programa
-//join actividads a on a.cod_actividad=i.cod_actividad
-//left join
-//    (SELECT po.id,po.reforma_id,po.pac_id,pac.area_item_id,i.cod_programa,i.cod_actividad,p.programa,a.actividad,pac.cod_item,pac.item,pac.mes,po.valor_orig FROM pac_origen po
-//join pacs pac on pac.id =po.pac_id
-//join area_item ai on ai.id=pac.area_item_id
-//join items i on i.id=ai.item_id
-//join programas p on p.cod_programa=i.cod_programa
-//join actividads a on a.cod_actividad=i.cod_actividad order by po.reforma_id) o on pd.reforma_id=o.reforma_id
-//where pd.reforma_id=8 or pd.reforma_id=9
-//Order By pd.reforma_id desc ;
-
         $todas = DB::table('pac_destino as pd')
             ->select('o.valor_orig', 'o.cod_programa as cod_programa_o', 'o.cod_actividad as cod_actividad_o', 'o.programa as programa_o', 'o.actividad as actividad_o', 'o.cod_item as cod_item_o', 'o.item as item_o', 'o.mes as mes_o', 'i.cod_programa', 'i.cod_actividad', 'p.programa', 'a.actividad', 'pac.cod_item', 'pac.item', 'm.month as mes', 'pd.valor_dest')
             ->join('pacs as pac', 'pac.id', '=', 'pd.pac_id')
@@ -307,6 +303,163 @@ class ReportController extends Controller
 
 
     }
+
+    /**
+     * Generar el informe tecnico con los datos de las reformas seleccionadas
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function generarInformeT(Request $request)
+    {
+        $reformas_id = $request->input('select_informes');//arreglo con los id de refromas
+
+        $reformas = Reforma::from('reformas as r')
+            ->with('pac_origen', 'pac_destino', 'area_item', 'user', 'reform_type','informe')
+            ->whereIn('r.id', $reformas_id)
+            ->orderBy('r.id', 'desc')
+            ->get();
+
+        $primer_reforma=$reformas->first();
+        $primer_reforma_tipo=$primer_reforma->reform_type_id; //id del tipo de reforma 2 o 3
+
+        foreach($reformas as $r){
+
+            //verificar que no exista una reforma en un informe
+            if (count($r->informe)){
+                return redirect()->back()->with('message_danger', 'No se pudo realizar el Informe Técnico porque la reforma No. '.$r->id.' se encuentra registrada en el Informe #'.$r->informe->numero.', con clasificación '.$r->informe->codificacion.'. Verifique la información.');
+            }
+
+            //verificar que no exista una reforma interna en las seleccionadas
+            if ($r->reform_type->tipo_reforma==="INTERNA"){
+                return redirect()->back()->with('message_danger', 'La reforma No. '.$r->id.' es interna y no se puede incluir en el Informe Técnico .');
+            }
+
+            //Ue las reformas sean de un mismo tipo INformativa o Ministerial
+            if ($r->reform_type_id!=$primer_reforma_tipo) {
+                return redirect()->back()->with('message_danger', 'Existen reformas combinadas. Debe filtrar las reformas de un mismo tipo (Informativa o Ministerial) para generar el Informe Técnico.');
+            }
+
+        }
+
+        $cod_informe=null;
+        if ($primer_reforma->reform_type->tipo_reforma==="INFORMATIVA"){
+            $cod_informe='MODIF';
+        }elseif (($primer_reforma->reform_type->tipo_reforma==="MINISTERIAL"))
+            $cod_informe='MIN';
+
+        $num = DB::table('informes')->where('codificacion',$cod_informe)->max('numero') + 1;
+
+        $informe=new Informe();
+        $informe->codificacion=$cod_informe;
+        $informe->numero=$num;
+        $informe->save();
+
+        foreach($reformas as $r){
+            $r->informe()->associate($informe);
+            $r->update();
+        }
+        return redirect()->back()->with('message_success', 'Se creo el informe tecnico correctamente');
+    }
+
+
+
+    function printSeparator(Section $section)
+    {
+        $lineStyle = array('weight' => 1.5, 'width' => \PhpOffice\PhpWord\Shared\Converter::cmToPixel(12), 'height' => 0, 'align' => 'center');
+        $section->addLine($lineStyle);
+    }
+
+    public function informeTecnicoWord(){
+
+        $fecha_actual = Carbon::now();
+        $month = $fecha_actual->formatLocalized('%B');
+        $year=$fecha_actual->year;
+
+        $fecha=$fecha_actual->day.' '.$month.' de '.$year;
+
+        $dir_area='MGS. CECILIA BALDA';
+        $cargo_dir=' / DIRECTORA DE TALENTO HUMANO Y BIENESTAR INSTITUCIONAL';
+
+        $phpWord=new PhpWord();
+
+        // Begin code
+        $section = $phpWord->addSection();
+
+        //salto de pagina
+//        $section = $phpWord->addSection();
+
+        $fontStyleCabecera = 'textoCabecera';
+        $phpWord->addFontStyle($fontStyleCabecera, ['name' => 'Arial', 'size' => 10, 'bold' => true ]);
+        $paragraphStyleCabecera = 'parrafoCabecera';
+        $phpWord->addParagraphStyle($paragraphStyleCabecera, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER,'spaceAfter' => 1]);
+
+
+        $section->addImage(asset('images/fdg-logo.png'), ['width' => 150, 'padding'=> 5, 'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
+
+        $section->addText('INFORME TÉCNICO DE MODIFICACIÓN AL PLAN OPERATIVO ANUAL '.$year,$fontStyleCabecera,$paragraphStyleCabecera);
+        $section->addText('FDG-REF-POA'.$year.'-MIN-001 ',$fontStyleCabecera,$paragraphStyleCabecera);
+
+        $section->addTextBreak();
+
+        $textPara = $section->addTextRun();
+        $textPara->addText('PARA:     ', ['bold'=>true]);
+        $textPara->addText('ING. BLANCA SILVA ', ['bold'=>true]);
+        $textPara->addText('/ DIRECTORA DE PLANIFICACIÓN Y CONTROL DE GESTIÓN ');
+
+        $textDe = $section->addTextRun();
+        $textDe->addText('DE:          ', ['bold'=>true]);
+        $textDe->addText($dir_area, ['bold'=>true]);
+        $textDe->addText($cargo_dir);
+
+        $textFecha = $section->addTextRun();
+        $textFecha->addText('FECHA:  ', ['bold'=>true]);
+        $textFecha->addText($fecha);
+
+        //linea horizontal separadora
+        $this->printSeparator($section);
+
+        $section->addText('Por medio de la presente solicito a usted, se autorice la reforma/reprogramación modificatoria
+        correspondiente a la Planificación Operativa Anual '.$year.', de acuerdo al siguiente detalle:',['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::BOTH]);
+
+        //Modificación al POA {{$reforma->cod_informe=='MIN' ? 'entre actividades' : 'misma actividad'}}
+        $section->addText('Modificación al POA entre actividades: ', ['bold'=>true]);
+
+        $section->addTextBreak(5);
+        $section->addText('justificativos: ', ['bold'=>true]);
+        $section->addTextBreak(5);
+
+        $section->addTextBreak();
+        $section->addText('Análisis de afectación de metas', ['bold'=>true]);
+
+        $section->addText('Las modificaciones solicitadas en las actividades que conforman la Planificación Operativa
+        Anual '.$year.', no afectarán a las metas planteadas ya que las mismas se cumplirán a medida que
+        se ejecute el presupuesto.');
+
+        $section->addText('Base Legal', ['bold'=>true]);
+        $section->addText(' Según art. 74 del Reglamento Genereal a la Ley del Deporte, Educación Física y Recreación, establece "De las modificaciónes al POA.- Las organizaciones deportivas podrán, en función de sus necesidades debidamente justificadas, modificar su plan operativo anual aprobado por el Ministerio Sectorial de conformidad a las disposiciones por este último".');
+
+        $section->addText('Documentos Habilitantes', ['bold'=>true]);
+        $section->addText('Adjunto Matriz de  reforma/reprogramació POA '.$year);
+
+
+
+
+
+
+        // Saving the document as OOXML file...
+        $objWriter = IOFactory::createWriter($phpWord, 'Word2007');
+
+        try {
+            $objWriter->save(storage_path('test.docx'));
+        }catch (\Exception $e){
+
+        }
+        return response()->download(storage_path('test.docx'));
+
+
+
+    }
+
 
     /**
      * Exportar las reformas seleccionadas a plantilla en excel
@@ -550,7 +703,7 @@ class ReportController extends Controller
 
                 for ($i = 0; $i < $cont; $i++) {
                     $fila++;
-                    $sheet->appendRow($fila, function ($row) use ($fila){
+                    $sheet->appendRow($fila, function ($row) use ($fila) {
                         //alineacion horizontal
                         $row->setAlignment('left');
 //                        // alineacion vertical
@@ -664,8 +817,8 @@ class ReportController extends Controller
 
             });
 
-            $lastrow= $excel->getActiveSheet()->getHighestRow();
-            $excel->getActiveSheet()->getStyle('A1:J'.$lastrow)->getAlignment()->setWrapText(true);
+            $lastrow = $excel->getActiveSheet()->getHighestRow();
+            $excel->getActiveSheet()->getStyle('A1:J' . $lastrow)->getAlignment()->setWrapText(true);
 
         })->export('xlsx');
 

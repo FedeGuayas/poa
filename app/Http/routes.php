@@ -101,6 +101,9 @@ Route::group(['prefix' => 'admin','middleware'=>'auth'], function () {
 //borrar es para probar pdf del informe tecnico de la reforma
     Route::get('reform/{reforma}/informe',['uses'=>'ReformaController@verInformePDF', 'as'=>'admin.reforma.verinforme']);
 
+    //prueba informe tecnito word
+    Route::get('reform/informeT',['uses'=>'ReportController@informeTecnicoWord', 'as'=>'admin.informe.tecnico']);
+
     //area_item (poafdg) planificacion
     Route::get('poafdg/planificacion',['uses'=>'PoaController@poaFDG', 'as'=>'poaFDG']);
     Route::get('item',['uses'=>'PoaController@getItem', 'as'=>'getItem']);
@@ -131,6 +134,7 @@ Route::group(['prefix' => 'admin','middleware'=>'auth'], function () {
 
     Route::get('historico/cierre',['uses'=>'HistoricoController@cierre', 'as'=>'admin.historico.cierre']);
     Route::get('historico/export',['uses'=>'HistoricoController@exportHistorico', 'as'=>'admin.historico.export']);
+    Route::post('historico/actualizar-cierre/{data?}',['uses'=>'HistoricoController@actualizarHistorico', 'as'=>'admin.actualizarHistorico']);
 
     //vista para editar la contraseña del perfil de usuario
     Route::get('/password/edit', ['uses' => 'UserController@getPasswordEdit','as' => 'user.password.edit']);

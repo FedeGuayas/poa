@@ -702,46 +702,8 @@ class ReformaController extends Controller
 
                     }
 
-                    //*** Reforma INFORMATIVA necesita aprobacion, no se pueden actualizar valores, enviar el informe tecnico ***//
+                    //*** Reforma INFORMATIVA necesita aprobacion, no se pueden actualizar valores ***//
 
-                    $pacdestino = PacDestino::where('reforma_id', $reforma->id)->with('pac')->first();
-                    $poa_dest = AreaItem::where('id', $pacdestino->pac->area_item_id)->with('item')->first();
-
-
-                    //Tipo de informe:
-                    $tipo_informe = null;
-                    // Distintos Items del mismo mes: Reforma
-                    if ($cod_item_origen != $poa_dest->item->cod_item && $mes_origen == $poa_dest->mes) {
-                        $tipo_informe = 'Reforma';
-                    }
-                    // Mismos Items distintos meses:Reprogramación
-                    if ($cod_item_origen == $poa_dest->item->cod_item && $mes_origen != $poa_dest->mes) {
-                        $tipo_informe = 'Reprogramación';
-                    }
-                    //Distintos Items distintos meses: Reforma/Reprogramación
-                    if ($cod_item_origen != $poa_dest->item->cod_item && $mes_origen != $poa_dest->mes) {
-                        $tipo_informe = 'Reforma/Reprogramación';
-                    }
-
-                    //Codigo  de informe:
-                    $cod_informe = null;
-                    $num_min = null;
-                    $num_modif = null;
-                    //Movimiento poa entre actividades diferentes: MIN
-                    if ($cod_actividad_origen != $poa_dest->item->cod_actividad) {
-                        $cod_informe = 'MIN';
-                        $num_min = DB::table('reformas')->max('num_min') + 1;
-                    }
-                    //Movimiento poa entre actividades iguales: MODIF
-                    if ($cod_actividad_origen === $poa_dest->item->cod_actividad) {
-                        $cod_informe = 'MODIF';
-                        $num_modif = DB::table('reformas')->max('num_modif') + 1;
-                    }
-
-                    $reforma->tipo_informe = $tipo_informe;
-                    $reforma->cod_informe = $cod_informe;
-                    $reforma->num_min = $num_min;
-                    $reforma->num_modif = $num_modif;
                     $reforma->estado = Reforma::REFORMA_PENDIENTE;
                     $reforma->update();
 
@@ -755,9 +717,7 @@ class ReformaController extends Controller
 
                     $pac_destino = PacDestino::with('pac')->where('reforma_id', $reforma->id)->first(); //para buscar poa destino
 
-                    $pdf = PDF::loadView('reformas.informeT-pdf', compact('reforma', 'jefe_area', 'fecha_actual', 'month', 'pac_destino'))->stream();
-
-                    $this->sendInfoTecReformaMail($reforma, $pdf);
+                    //$pdf = PDF::loadView('reformas.informeT-pdf', compact('reforma', 'jefe_area', 'fecha_actual', 'month', 'pac_destino'))->stream();
 
                     break;
 
@@ -796,45 +756,29 @@ class ReformaController extends Controller
                         $cont++;
                     }
 
-                    //*** Reforma MINISTERIAL necesita aprobacion, no se pueden actualizar valores, enviar el informe tecnico ***//
+                    //*** Reforma MINISTERIAL necesita aprobacion, no se pueden actualizar valores ***//
 
-                    $pacdestino = PacDestino::where('reforma_id', $reforma->id)->with('pac')->first();
-                    $poa_dest = AreaItem::where('id', $pacdestino->pac->area_item_id)->with('item')->first();
-
+//                    $pacdestino = PacDestino::where('reforma_id', $reforma->id)->with('pac')->first();
+//                    $poa_dest = AreaItem::where('id', $pacdestino->pac->area_item_id)->with('item')->first();
                     //Tipo de informe:
-                    $tipo_informe = null;
+//                    $tipo_informe = null;
                     // Distintos Items del mismo mes: Reforma
-                    if ($cod_item_origen != $poa_dest->item->cod_item && $mes_origen == $poa_dest->mes) {
-                        $tipo_informe = 'Reforma';
-                    }
+//                    if ($cod_item_origen != $poa_dest->item->cod_item && $mes_origen == $poa_dest->mes) {
+//                        $tipo_informe = 'Reforma';
+//                    }
                     // Mismos Items distintos meses:Reprogramación
-                    if ($cod_item_origen == $poa_dest->item->cod_item && $mes_origen != $poa_dest->mes) {
-                        $tipo_informe = 'Reprogramación';
-                    }
+//                    if ($cod_item_origen == $poa_dest->item->cod_item && $mes_origen != $poa_dest->mes) {
+//                        $tipo_informe = 'Reprogramación';
+//                    }
                     //Distintos Items distintos meses: Reforma/Repregramación
-                    if ($cod_item_origen != $poa_dest->item->cod_item && $mes_origen != $poa_dest->mes) {
-                        $tipo_informe = 'Reforma/Reprogramación';
-                    }
+//                    if ($cod_item_origen != $poa_dest->item->cod_item && $mes_origen != $poa_dest->mes) {
+//                        $tipo_informe = 'Reforma/Reprogramación';
+//                    }
+//                    $cod_informe = 'MIN';
+//                    $num_min = DB::table('reformas')->max('num_min') + 1;
+//                    $cod_informe = 'MODIF';
+//                    $num_modif = DB::table('reformas')->max('num_modif') + 1;
 
-                    //Codigo  de informe:
-                    $cod_informe = null;
-                    $num_min = null;
-                    $num_modif = null;
-                    //Movimiento poa entre actividades diferentes: MIN
-                    if ($cod_actividad_origen != $poa_dest->item->cod_actividad) {
-                        $cod_informe = 'MIN';
-                        $num_min = DB::table('reformas')->max('num_min') + 1;
-                    }
-                    //Movimiento poa entre actividades iguales: MODIF
-                    if ($cod_actividad_origen === $poa_dest->item->cod_actividad) {
-                        $cod_informe = 'MODIF';
-                        $num_modif = DB::table('reformas')->max('num_modif') + 1;
-                    }
-
-                    $reforma->tipo_informe = $tipo_informe;
-                    $reforma->cod_informe = $cod_informe;
-                    $reforma->num_min = $num_min;
-                    $reforma->num_modif = $num_modif;
                     $reforma->estado = Reforma::REFORMA_PENDIENTE;
                     $reforma->update();
 
@@ -848,9 +792,9 @@ class ReformaController extends Controller
 
                     $pac_destino = PacDestino::with('pac')->where('reforma_id', $reforma->id)->first(); //para buscar poa destino
 
-                    $pdf = PDF::loadView('reformas.informeT-pdf', compact('reforma', 'jefe_area', 'fecha_actual', 'month', 'pac_destino'))->stream();
+                   // $pdf = PDF::loadView('reformas.informeT-pdf', compact('reforma', 'jefe_area', 'fecha_actual', 'month', 'pac_destino'))->stream();
 
-                    $this->sendInfoTecReformaMail($reforma, $pdf);
+//                    $this->sendInfoTecReformaMail($reforma, $pdf);
 
                     break;
             }

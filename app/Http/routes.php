@@ -102,7 +102,7 @@ Route::group(['prefix' => 'admin','middleware'=>'auth'], function () {
     Route::get('reform/{reforma}/informe',['uses'=>'ReformaController@verInformePDF', 'as'=>'admin.reforma.verinforme']);
 
     //prueba informe tecnito word
-    Route::get('reform/informeT',['uses'=>'ReportController@informeTecnicoWord', 'as'=>'admin.informe.tecnico']);
+    Route::get('reformas/informe-tecnico/{informe}',['uses'=>'ReportController@informeTecnicoWord', 'as'=>'admin.informe.tecnico']);
 
     //area_item (poafdg) planificacion
     Route::get('poafdg/planificacion',['uses'=>'PoaController@poaFDG', 'as'=>'poaFDG']);

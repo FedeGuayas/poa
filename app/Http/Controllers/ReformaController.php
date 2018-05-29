@@ -50,7 +50,7 @@ class ReformaController extends Controller
                 ->join('areas as a', 'a.id', '=', 'ai.area_id')
                 ->join('items as i', 'i.id', '=', 'ai.item_id')
                 ->join('pac_destino as pd', 'pd.reforma_id', '=', 'r.id')
-                ->select('r.id', 'r.estado', 'r.monto_orig', 'rt.tipo_reforma', 'w.nombres', 'w.apellidos', 'm.month as mes', 'i.cod_programa', 'i.cod_actividad', 'i.cod_item', 'i.item', 'i.grupo_gasto', 'a.area', 'ai.area_id as aiID', DB::raw('sum(pd.valor_dest) as total_destino')
+                ->select('r.id', 'r.estado', 'r.monto_orig','r.informe_id', 'rt.tipo_reforma', 'w.nombres', 'w.apellidos', 'm.month as mes', 'i.cod_programa', 'i.cod_actividad', 'i.cod_item', 'i.item', 'i.grupo_gasto', 'a.area', 'ai.area_id as aiID', DB::raw('sum(pd.valor_dest) as total_destino')
                 )
                 ->orderBy('r.id', 'desc')
                 ->groupBy('r.id', 'r.estado', 'r.monto_orig', 'w.nombres', 'w.apellidos', 'mes', 'i.cod_programa', 'i.cod_actividad', 'i.cod_item', 'i.item', 'i.grupo_gasto', 'a.area')
@@ -88,14 +88,14 @@ class ReformaController extends Controller
         $pac_pendiente_total = PacOrigen::where('pac_id', $pac_id)->where('estado', PacOrigen::PACORIGEN_PENDIENTE)->sum('valor_orig');
 
         //reformas que se dejaron inconclusas
-        $pac_origen_test = PacOrigen::select('reforma_id')->where('pac_id', $pac_id)->where('estado', PacOrigen::PACORIGEN_PENDIENTE)->get();
-        if (count($pac_origen_test) > 0) { //existen reformas en eeste pac pendientes
-            foreach ($pac_origen_test as $pot) {
-                $pac_destino_test = PacDestino::where('reforma_id', $pot->reforma_id)->get();
-                $message = 'La reforma No.' . $pot->reforma_id . ' del proceso "' . $pac->concepto . '", y no tiene saldo disponible o Ud no terminó una reforma satisfactoriamente, si su caso es este último contacte con un administrador del sistema';
-                return redirect()->back()->with('message_danger', $message);
-            }
-        }
+//        $pac_origen_test = PacOrigen::select('reforma_id')->where('pac_id', $pac_id)->where('estado', PacOrigen::PACORIGEN_PENDIENTE)->get();
+//        if (count($pac_origen_test) > 0) { //existen reformas en este pac pendientes
+//            foreach ($pac_origen_test as $pot) {
+//                $pac_destino_test = PacDestino::where('reforma_id', $pot->reforma_id)->get();
+//                $message = 'La reforma No.' . $pot->reforma_id . ' del proceso "' . $pac->concepto . '", no tiene saldo disponible o Ud no terminó una reforma satisfactoriamente, si su caso es este último contacte con un administrador del sistema';
+//                return redirect()->back()->with('message_danger', $message);
+//            }
+//        }
 
         if ($pac_pendiente_total >= $pac->liberado) {//si el acumulado pendiente es mayo o igual al liberado del pac
             $message = 'Puede que existan reformas pendientes para el item ' . $pac->cod_item . ' del proceso "' . $pac->concepto . '", y no tiene saldo disponible o Ud no terminó una reforma satisfactoriamente, si su caso es este último contacte con un administrador del sistema';

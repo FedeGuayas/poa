@@ -29,14 +29,24 @@
                 <th style="width: 70px;">Cod Destino</th>
                 <th style="width: 70px;">Tipo</th>
                 <th style="width: 50px;">Estado</th>
-                <th>
-                    {!! Form::checkbox('inf_all',null,false,['id'=>'inf_all']) !!}
-                    {!! Form::label('inf_all','Informes') !!}
+                <th style="width: 45px;">
+                    {{--Check de seleccionar todos los check para informe de la pagina que se muestra--}}
+                    {!! Form::checkbox('inf_all',null,false,['id'=>'inf_all','class'=>'checkbox tip','data-placement'=>'top', 'title'=>'Seleccionar todo']) !!}
+                    {{--{!! Form::label('inf_all','Informes') !!}--}}
+                    {{--Crear informe tecnico de las reformas agrupadas con los check--}}
+                    @permission('imprimir-reformas')
+                    {!! Form::button('<i class="fa fa-file-word-o" aria-hidden="true"></i>',['class'=>'btn-xs btn-info tip','data-placement'=>'top', 'title'=>'Generar Informe','type'=>'submit','id'=>'gen_informe','target'=>'_blank','name'=>'gen_informe','value'=>'gen_informe']) !!}
+                    @endpermission
                 </th>
                 <th style="width: 70px;">Acción</th>
-                <th>
-                    {!! Form::checkbox('imp_all',null,false,['id'=>'imp_all']) !!}
-                    {!! Form::label('imp_all','Matriz') !!}
+                <th  style="width: 45px;">
+                    {{--Check de seleccionar todos los check para informe d ela pagina que se muestra--}}
+                    {!! Form::checkbox('imp_all',null,false,['id'=>'imp_all','class'=>'checkbox tip','data-placement'=>'top', 'title'=>'Seleccionar todo']) !!}
+                    {{--{!! Form::label('imp_all','Matriz') !!}--}}
+                    {{--Expoprtar en excel la matriz de las reformas seleccionadas con los check--}}
+                    @permission('imprimir-reformas')
+                    {!! Form::button('<i class="fa fa-file-excel-o" aria-hidden="true"></i>',['class'=>'btn-xs btn-success tip','data-placement'=>'top', 'title'=>'Imprimir Matriz Reformas','type'=>'submit','id'=>'imp_all_excel','target'=>'_blank','name'=>'imp_all_excel','value'=>'imp_all_excel']) !!}
+                    @endpermission
                 </th>
             </tr>
             </thead>
@@ -54,17 +64,13 @@
                 <td class="tfoot_search">Código Dest.</td>
                 <td class="tfoot_select"></td>
                 <td class="tfoot_select"></td>
-                <td align="center">
-                    @permission('imprimir-reformas')
-                    {!! Form::button('<i class="fa fa-file-word-o" aria-hidden="true"></i>',['class'=>'btn-xs btn-info tip','data-placement'=>'top', 'title'=>'Generar Informe','type'=>'submit','id'=>'gen_informe','target'=>'_blank','name'=>'gen_informe','value'=>'gen_informe']) !!}
-                    @endpermission
-                </td>
+                <td align="center" class="tfoot_search"></td>
                 <td></td>
-                <td align="center">
-                    @permission('imprimir-reformas')
+                <td>
+                    {{--Expoprtar en pdf la matriz de las reformas seleccionadas con los check--}}
+                    {{--@permission('imprimir-reformas')--}}
                     {{--{!! Form::button('<i class="fa fa-file-pdf-o" aria-hidden="true"></i>',['class'=>'btn-xs btn-danger tip','data-placement'=>'top', 'title'=>'Imprimir PDF','type'=>'submit','id'=>'imp_all_pdf','target'=>'_blank','name'=>'imp_all_pdf','value'=>'imp_all_pdf']) !!}--}}
-                    {!! Form::button('<i class="fa fa-file-excel-o" aria-hidden="true"></i>',['class'=>'btn-xs btn-success tip','data-placement'=>'top', 'title'=>'Imprimir Excel','type'=>'submit','id'=>'imp_all_excel','target'=>'_blank','name'=>'imp_all_excel','value'=>'imp_all_excel']) !!}
-                    @endpermission
+                    {{--@endpermission--}}
                 </td>
             </tr>
             </tfoot>
@@ -104,16 +110,21 @@
                                 Aprobada
                             </td>
                         @endif
-                        <td>
+                        <td align="center">
                         {{--@if($reforma->estado==\App\Reforma::REFORMA_APROBADA)--}}
                                 {{--<a href="#">--}}
                                     {{--{!! Form::button('<i class="fa fa fa-download" aria-hidden="true"></i>',['class'=>'btn-xs btn-success tip','data-placement'=>'top', 'title'=>'Descargar Informe','type'=>'submit','target'=>'_blank']) !!}--}}
                                 {{--</a>--}}
                         {{--@endif--}}
+                            @if(is_null($reforma->informe_id))
                             <a href="#!">
                                 {!! Form::checkbox('select_informes[]',$reforma->id,false,['id'=>'I'.$reforma->id]) !!}
                                 {{--{!! Form::label($reforma->id, $reforma->id) !!}--}}
                             </a>
+                                @else
+                                <a href="{{route('admin.informe.tecnico',$reforma->informe_id)}}" class="btn btn-xs btn-primary tip" data-placement="top" title="Descargar">{{$reforma->informe->codificacion.'-'.$reforma->informe->numero}}
+                                </a>
+                            @endif
                         </td>
                         <td>
                             @permission('admin-reformas')
@@ -144,7 +155,7 @@
                             {{--</a>--}}
                         </td>
 
-                        <td>
+                        <td align="center">
                             @permission('imprimir-reformas')
                             <a href="#!">
                                 {!! Form::checkbox('imp_reformas[]',$reforma->id,false,['id'=>'R'.$reforma->id]) !!}
@@ -268,6 +279,14 @@
         $(document).on('mouseover', '.tip', function (event) {
             $(this).tooltip();
         });
+
+        $(document).on('click', '#gen_informe', function (event) {
+            $(this).prop('hidden', true);
+//            setTimeout(function () {
+//                    $("#gen_informe").prop('hidden', true);
+//                    }, 50);
+        });
+
 
         $(document).on('click', '.delete', function (e) {
             e.preventDefault();

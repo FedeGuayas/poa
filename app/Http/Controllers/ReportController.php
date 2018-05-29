@@ -170,7 +170,7 @@ class ReportController extends Controller
     }
 
     /**
-     * imprimir las reformas seleccionadas en pdf
+     * imprimir las reformas seleccionadas en pdf, tambien en excell y word
      *
      * Este metodo no se esta utilizando solo las primeras lineas para llamar a otros metodos
      * @param $id
@@ -313,6 +313,10 @@ class ReportController extends Controller
     {
         $reformas_id = $request->input('select_informes');//arreglo con los id de refromas
 
+        if (is_null($reformas_id)){
+            return redirect()->back()->with('message_danger', 'Debe seleccionar alguna reforma para generar el Informe Técnico');
+        }
+
         $reformas = Reforma::from('reformas as r')
             ->with('pac_origen', 'pac_destino', 'area_item', 'user', 'reform_type','informe')
             ->whereIn('r.id', $reformas_id)
@@ -334,7 +338,7 @@ class ReportController extends Controller
                 return redirect()->back()->with('message_danger', 'La reforma No. '.$r->id.' es interna y no se puede incluir en el Informe Técnico .');
             }
 
-            //Ue las reformas sean de un mismo tipo INformativa o Ministerial
+            //Que las reformas sean de un mismo tipo INformativa o Ministerial
             if ($r->reform_type_id!=$primer_reforma_tipo) {
                 return redirect()->back()->with('message_danger', 'Existen reformas combinadas. Debe filtrar las reformas de un mismo tipo (Informativa o Ministerial) para generar el Informe Técnico.');
             }
@@ -358,18 +362,47 @@ class ReportController extends Controller
             $r->informe()->associate($informe);
             $r->update();
         }
-        return redirect()->back()->with('message_success', 'Se creo el informe tecnico correctamente');
+        return redirect()->back()->with('message', 'Se creo el informe técnico '. $informe->codificacion.'-'.$informe->numero.'  correctamente');
     }
 
 
-
+    /**
+     * Linea horizontal para separar seccion en el word
+     * @param Section $section
+     */
     function printSeparator(Section $section)
     {
         $lineStyle = array('weight' => 1.5, 'width' => \PhpOffice\PhpWord\Shared\Converter::cmToPixel(12), 'height' => 0, 'align' => 'center');
         $section->addLine($lineStyle);
     }
 
-    public function informeTecnicoWord(){
+    /**
+     * Genera el Informe tecnico en word
+     * @param Informe $informe
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
+    public function informeTecnicoWord(Informe $informe){
+
+        $reforma = Reforma::with('pac_origen', 'reform_type', 'area_item', 'user','informe')->where('informe_id', $informe->id)->first();
+
+        $area_id = $reforma->area_item->area_id;
+
+        //trabajadores que pertenecen al mismo area del trabajador logeado y esta en el departamento direccion (jefe de area)
+        $jefe_area = Worker::whereHas('departamento', function ($query) use ($area_id) {
+            $query->where('area_id', $area_id)
+                ->where('departamento', 'like', "%direcc%");
+        })->first();
+
+        if (is_null($jefe_area)) {
+            return redirect()->back()->with('message_danger', 'No se encontró el jefe de área para el usuario logueado y este es necesario para la firma del autorizado del documento');
+        }
+
+        $reformas = Reforma::from('reformas as r')
+            ->with('pac_origen', 'pac_destino', 'area_item', 'user', 'reform_type','informe')
+            ->where('r.informe_id', $informe->id)
+            ->orderBy('r.id', 'desc')
+            ->get();
+
 
         $fecha_actual = Carbon::now();
         $month = $fecha_actual->formatLocalized('%B');
@@ -377,9 +410,10 @@ class ReportController extends Controller
 
         $fecha=$fecha_actual->day.' '.$month.' de '.$year;
 
-        $dir_area='MGS. CECILIA BALDA';
-        $cargo_dir=' / DIRECTORA DE TALENTO HUMANO Y BIENESTAR INSTITUCIONAL';
+        $dir_area= ''.$jefe_area->tratamiento.'. '.$jefe_area->nombres.' '.$jefe_area->apellidos ;
+        $cargo_dir=' / '.strtoupper($jefe_area->cargo);
 
+        //Inicializ objeto word
         $phpWord=new PhpWord();
 
         // Begin code
@@ -393,11 +427,11 @@ class ReportController extends Controller
         $paragraphStyleCabecera = 'parrafoCabecera';
         $phpWord->addParagraphStyle($paragraphStyleCabecera, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER,'spaceAfter' => 1]);
 
-
         $section->addImage(asset('images/fdg-logo.png'), ['width' => 150, 'padding'=> 5, 'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
 
         $section->addText('INFORME TÉCNICO DE MODIFICACIÓN AL PLAN OPERATIVO ANUAL '.$year,$fontStyleCabecera,$paragraphStyleCabecera);
-        $section->addText('FDG-REF-POA'.$year.'-MIN-001 ',$fontStyleCabecera,$paragraphStyleCabecera);
+       // FDG-REF-POA{{$fecha_actual->year.'-'.$reforma->cod_informe.'-'.($reforma->cod_informe=='MIN' ? sprintf("%'.03d",$reforma->num_min) : sprintf("%'.03d",$reforma->num_modif)) }}
+        $section->addText('FDG-REF-POA'.$year.'-'.$informe->codificacion.'-'. sprintf("%'.03d",$informe->numero).' ',$fontStyleCabecera,$paragraphStyleCabecera);
 
         $section->addTextBreak();
 
@@ -422,13 +456,23 @@ class ReportController extends Controller
         correspondiente a la Planificación Operativa Anual '.$year.', de acuerdo al siguiente detalle:',['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::BOTH]);
 
         //Modificación al POA {{$reforma->cod_informe=='MIN' ? 'entre actividades' : 'misma actividad'}}
-        $section->addText('Modificación al POA entre actividades: ', ['bold'=>true]);
+        if ($reforma->informe->codificacion=='MIN'){
+            $section->addText('Modificación al POA entre actividades', ['bold'=>true]);
+        }else {
+            $section->addText('Modificación al POA misma actividad', ['bold'=>true]);
+        }
 
-        $section->addTextBreak(5);
-        $section->addText('justificativos: ', ['bold'=>true]);
-        $section->addTextBreak(5);
 
         $section->addTextBreak();
+//        $section->addText('justificativos: ', ['bold'=>true]);
+        foreach($reformas as $reforma){
+            foreach ($reforma->pac_destino as $pd){
+                // Add listitem elements
+                $section->addListItem(''.$reforma->nota.' ( '.$reforma->area_item->item->cod_item.' '.$reforma->area_item->item->item.' - '.$reforma->area_item->item->cod_actividad.' - '.$reforma->area_item->item->actividad_programa->actividad->actividad.' ), '.$pd->justificativo.' ( '.$pd->pac->cod_item.' '.$pd->pac->item.' - '.$pd->pac->area_item->item->cod_actividad.' - '.$pd->pac->area_item->item->actividad_programa->actividad->actividad.' )', 0);
+            }
+        }
+        $section->addTextBreak();
+
         $section->addText('Análisis de afectación de metas', ['bold'=>true]);
 
         $section->addText('Las modificaciones solicitadas en las actividades que conforman la Planificación Operativa
@@ -439,22 +483,50 @@ class ReportController extends Controller
         $section->addText(' Según art. 74 del Reglamento Genereal a la Ley del Deporte, Educación Física y Recreación, establece "De las modificaciónes al POA.- Las organizaciones deportivas podrán, en función de sus necesidades debidamente justificadas, modificar su plan operativo anual aprobado por el Ministerio Sectorial de conformidad a las disposiciones por este último".');
 
         $section->addText('Documentos Habilitantes', ['bold'=>true]);
-        $section->addText('Adjunto Matriz de  reforma/reprogramació POA '.$year);
+        $section->addText('Adjunto Matriz de  reforma/reprogramación POA '.$year);
 
 
+        $section->addTextBreak(2);
+
+        $tableStyle = [
+            'borderTopSize'  => 6,
+            'borderRightSize'=>6,
+            'borderBottomSize'  => 6,
+            'borderLeftSize'  => 6,
+            'cellMargin'  => 50,
+            'width'=>100];
+        $phpWord->addTableStyle('myTable', $tableStyle);
+        $table = $section->addTable('myTable');
+        $cellRowSpan = ['vMerge' => 'restart'];
+        $cellRowContinue = ['vMerge' => 'continue'];
+        $table->addRow();
+        $table->addCell(5000,$cellRowSpan)->addText("Elaborado Por:");
+        $table->addCell(5000,$cellRowSpan)->addText("Solicitado Por:");
+        $table->addRow();
+        $table->addCell(5000,$cellRowContinue);
+        $table->addCell(5000,$cellRowContinue);
+        $table->addRow();
+        $table->addCell(5000)->addText("Nombre: " .$reforma->user->worker->tratamiento.'. '.$reforma->user->worker->getFullName());
+        $table->addCell(5000)->addText("Nombre: ".$jefe_area->tratamiento.'. '.$jefe_area->nombres.' '.$jefe_area->apellidos);
+        $table->addRow();
+        $table->addCell(5000)->addText("Cargo:".$reforma->user->worker->cargo);
+        $table->addCell(5000)->addText("Cargo:".$jefe_area->cargo);
 
 
+        // Add footer
+        $footer = $section->addFooter();
+        $footer->addPreserveText('Página {PAGE} de {NUMPAGES}.',null, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::END]);
 
 
-        // Saving the document as OOXML file...
+//         Saving the document as OOXML file...
         $objWriter = IOFactory::createWriter($phpWord, 'Word2007');
 
         try {
-            $objWriter->save(storage_path('test.docx'));
+            $objWriter->save(storage_path('Informe Tecnico.docx'));
         }catch (\Exception $e){
 
         }
-        return response()->download(storage_path('test.docx'));
+        return response()->download(storage_path('Informe Tecnico.docx'));
 
 
 

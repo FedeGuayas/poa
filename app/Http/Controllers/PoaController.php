@@ -129,23 +129,35 @@ class PoaController extends Controller
      */
     public function destroy(Request $request, $id)
     {
-        $poafdg = AreaItem::findOrFail($id);
-        $monto = $poafdg->monto;
+        try {
+            DB::beginTransaction();
+            $poafdg = AreaItem::findOrFail($id);
+            $monto = $poafdg->monto;
 
-        $mes=Month::where('cod',$poafdg->mes)->first();
+            $mes=Month::where('cod',$poafdg->mes)->first();
 
-        $item_id = $poafdg->item_id;
-        $item = Item::where('id', $item_id)->first();
-        $disponible = $item->disponible;
-        $disp = $disponible + $monto;//disp de del item general
-        $item->disponible = $disp;
-        $item->update();
+            $item_id = $poafdg->item_id;
+            $item = Item::where('id', $item_id)->first();
+            $disponible = $item->disponible;
+            $disp = $disponible + $monto;//disp de del item general
+            $item->disponible = $disp;
+            $item->update();
 
-        $poafdg->delete();
-        $message = 'Monto del mes ' . $mes->month . ' eliminado';
-        if ($request->ajax()) {
+            $poafdg->delete();
+            $message = 'Monto del mes ' . $mes->month . ' eliminado';
+
+            DB::Commit();
+            if ($request->ajax()) {
+                return response()->json(['message' => $message]);
+            }
+
+        }catch (\Exception $e){
+            DB::Rollback();
+            $message = 'Existen procesos vinculados a esta programación del mes de ' . $mes->month . ' y que no pueden ser eliminados';
+//            $message = $e->getMessage();
             return response()->json(['message' => $message]);
         }
+
     }
 
 

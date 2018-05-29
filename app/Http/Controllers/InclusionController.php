@@ -57,17 +57,18 @@ class InclusionController extends Controller
                 ->where('area_id', 'like', '%' . $area_select . '%')
                 ->get();
 
-            $pacs = DB::table('area_item as ai')
-                ->join('pacs as p', 'p.area_item_id', '=', 'ai.id')
+            $inclusiones = DB::table('pacs as p')
                 ->join('months as m', 'm.cod', '=', 'p.mes')
+                ->join('area_item as ai', 'ai.id', '=', 'p.area_item_id')
                 ->join('items as i', 'ai.item_id', '=', 'i.id')
                 ->join('areas as a', 'a.id', '=', 'ai.area_id')
                 ->join('workers as w', 'w.id', '=', 'p.worker_id')
-                ->select('p.id', 'p.cod_item', 'p.item', 'm.month as mes', 'p.presupuesto', 'p.disponible', 'p.comprometido', 'p.devengado', 'w.nombres', 'w.apellidos', 'a.area', 'p.procedimiento', 'p.concepto', 'i.cod_programa', 'i.cod_actividad')
-                ->where('a.id', $area_select)
+                ->select('p.id', 'p.cod_item','p.item', 'm.month as mes', 'w.nombres', 'w.apellidos', 'a.area', 'p.procedimiento','p.tipo_compra', 'p.concepto', 'i.cod_programa', 'i.cod_actividad','p.presupuesto')
+                ->where('ai.area_id', $area_select)
+                ->where('p.inclusion', Pac::PROCESO_INCLUSION_SI)
                 ->get();
 
-            return view('inclusion.planificacion-inc-pac', compact('list_areas', 'area_item', 'area_select', 'pacs', 'area'));
+            return view('inclusion.planificacion-inc-pac', compact('list_areas', 'area_item', 'area_select', 'inclusiones', 'area'));
         } else return abort(403);
     }
 
@@ -205,7 +206,7 @@ class InclusionController extends Controller
 
 
     /**
-     * Vista para crear inlcusión PAC del area
+     * Vista para crear inlcusión del proceso del area
      *
      * @return \Illuminate\Http\Response
      */

@@ -13,7 +13,7 @@
     <div class="row">
         <div class="col-md-12">
             <div class="panel panel-info">
-                <div class="panel-heading clearfix">INCLUSIÓN-PAC-{{$area->area}}
+                <div class="panel-heading clearfix">INCLUSIÓN - PROCESOS -{{$area->area}}
                     <a href="#!" class="btn-collapse pull-right" data-toggle="collapse" data-target="#poa-area"
                        aria-expanded="false" aria-controls="poa-area"><i class="fa fa-minus"></i></a>
                 </div>

@@ -8,21 +8,21 @@
 
     <div class="col-md-12">
 
-            {!! Form::open(['route'=>['indexIncPac'],'method'=>'GET','class'=>'form_noEnter', 'id'=>'form_item_store']) !!}
-            <div class="form-inline">
-                <div class="form-group">
-                    {{--{!! Form::label('area','Areas') !!}--}}
-                    {!! Form::select('area',$list_areas,$area_select,['class'=>'form-control','placeholder'=>'Direcciones...','id'=>'area']) !!}
-                </div>
-                {!! Form::button('<i class="fa fa-search" aria-hidden="true"></i>',['class'=>'btn btn-primary tip','data-placement'=>'top', 'title'=>'Buscar','id'=>'buscar', 'type'=>'submit']) !!}
+        {!! Form::open(['route'=>['indexIncPac'],'method'=>'GET','class'=>'form_noEnter', 'id'=>'form_item_store']) !!}
+        <div class="form-inline">
+            <div class="form-group">
+                {{--{!! Form::label('area','Areas') !!}--}}
+                {!! Form::select('area',$list_areas,$area_select,['class'=>'form-control','placeholder'=>'Direcciones...','id'=>'area']) !!}
             </div>
-            {!! Form::close() !!}
+            {!! Form::button('<i class="fa fa-search" aria-hidden="true"></i>',['class'=>'btn btn-primary tip','data-placement'=>'top', 'title'=>'Buscar','id'=>'buscar', 'type'=>'submit']) !!}
+        </div>
+        {!! Form::close() !!}
 
 
         <hr>
 
         <div class="panel panel-info">
-            <div class="panel-heading clearfix">INCLUSION-PAC
+            <div class="panel-heading clearfix">INCLUSION - PROCESOS
                 <a href="#!" class="btn-collapse pull-right" data-toggle="collapse" data-target="#poa-area"
                    aria-expanded="false" aria-controls="poa-area"><i class="fa fa-minus"></i></a>
             </div>
@@ -58,23 +58,23 @@
                                     <td>
                                         @permission('planifica-pac')
                                         {{--Si hay disponibilidad de ese poa o es una inclusion, en cuyo caso el disponible=0--}}
-                                            {{--Si el usuario pertenece al area a la que se repartio el dinero o es root --}}
-                                            @if (Auth::user()->worker->departamento->area->area==$ai->area || Auth::user()->hasRole('root'))
-                                                {{--Si es una inclusion poa--}}
-                                                @if ($ai->inclusion==\App\AreaItem::INCLUSION_YES)
-                                                    <a href="{{route('createPacInclusion',$ai->id)}}"
-                                                       class="btn btn-xs btn-danger tip"
-                                                       data-placement="top" title="Inclusión Item Nuevo">
-                                                        <i class="fa fa fa-money"></i>
-                                                    </a>
-                                                    @else
+                                        {{--Si el usuario pertenece al area a la que se repartio el dinero o es root --}}
+                                        @if (Auth::user()->worker->departamento->area->area==$ai->area || Auth::user()->hasRole('root'))
+                                            {{--Si es una inclusion poa--}}
+                                            @if ($ai->inclusion==\App\AreaItem::INCLUSION_YES)
+                                                <a href="{{route('createPacInclusion',$ai->id)}}"
+                                                   class="btn btn-xs btn-danger tip"
+                                                   data-placement="top" title="Inclusión Item Nuevo">
+                                                    <i class="fa fa fa-money"></i>
+                                                </a>
+                                            @else
                                                 <a href="{{route('createPacInclusion',$ai->id)}}"
                                                    class="btn btn-xs btn-success tip"
                                                    data-placement="top" title="Inclusión Item existente">
                                                     <i class="fa fa fa-money"></i>
                                                 </a>
-                                                @endif
                                             @endif
+                                        @endif
                                         @endpermission
                                     </td>
                                 </tr>
@@ -87,10 +87,80 @@
         </div>{{--./panel-info--}}
     </div>{{--./col-md-12--}}
 
+    <div class="col-md-12">
+        <div class="panel panel-success">
+            <div class="panel-heading clearfix">Inclusiones - {{count($area)>0 ? $area->area : ""}}
+                <a href="#!" class="btn-collapse pull-right" data-toggle="collapse" data-target="#resumen"
+                   aria-expanded="false" aria-controls="resumen"><i class="fa fa-minus"></i></a>
+            </div>
+            <div class="panel-body collapse in" id="resumen">
+
+                <table class="table table-striped table-bordered table-condensed table-hover table-responsive"
+                       id="pac_table" cellspacing="0" width="100%" style="display: none;">
+                    <thead class="bg-info">
+                    <tr>
+                        <th>Cod_item</th>
+                        <th>Procedimiento</th>
+                        <th>Tipo_compra</th>
+                        <th>Concepto</th>
+                        <th>Mes</th>
+                        <th>Responsable</th>
+                        <th>Acción</th>
+                    </tr>
+                    </thead>
+                    <tfoot>
+                    <tr>
+                        <th class="tfoot_search">Cod</th>
+                        <th class="tfoot_select"></th>
+                        <th class="tfoot_select"></th>
+                        <th class="tfoot_search">Concepto</th>
+                        <th class="tfoot_search">Mes</th>
+                        <th class="tfoot_search">filtrar</th>
+                        <th></th>
+                    </tr>
+                    </tfoot>
+                    <tbody>
+                    @foreach($inclusiones as $inc)
+                        <tr>
+                            <td>{{$inc->cod_programa.'-'.$inc->cod_actividad.'-'.$inc->cod_item}}</td>
+                            <td>{{$inc->procedimiento}}</td>
+                            <td>{{$inc->tipo_compra}}</td>
+                            <td>{{$inc->concepto}}</td>
+                            <td>{{$inc->mes}}</td>
+                            <td>{{$inc->nombres}} {{$inc->apellidos}}</td>
+                            <td>
+
+                                @permission('planifica-pac')
+                                {{--Si el usuario pertenece al area a la que se repartio el dinero--}}
+                                @if (Auth::user()->worker->departamento->area->area==$inc->area || Auth::user()->hasRole('root'))
+                                    {{--Si no se han realizado movimientos de dinero en el pac--}}
+                                    @if ($inc->presupuesto == 0 )
+                                        <a href="{{route('admin.pacs.edit',$inc->id)}}"
+                                        class="btn btn-xs btn-success tip"
+                                        data-placement="top" title="Editar"> <i class="fa fa-pencil"></i>
+                                        </a>
+                                        <a href="#!" class="btn btn-xs btn-danger delete tip" data-placement="top"
+                                        title="Eliminar"
+                                        data-id="{{$inc->id}}"><i class="fa fa-trash-o"></i>
+                                        </a>
+                                    @endif
+                                @endif
+                                @endpermission
+                            </td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+
+            </div>
+        </div>{{--./panel-success--}}
+    </div>{{--./col-md-12--}}
 
 
-    {!! Form::open(['route'=>['admin.pacs.destroy',':ID'],'method'=>'DELETE','id'=>'form-delete']) !!}
-    {!! Form::close() !!}
+
+
+    {{--{!! Form::open(['route'=>['admin.pacs.destroy',':ID'],'method'=>'DELETE','id'=>'form-delete']) !!}--}}
+    {{--{!! Form::close() !!}--}}
 
 @endsection
 
@@ -102,7 +172,7 @@
         $(document).ready(function () {
 
             $(".form_noEnter").keypress(function (e) {
-                if (e.which == 13) {
+                if (e.which === 13) {
                     return false;
                 }
             });
@@ -137,6 +207,11 @@
 
             });
 
+            //texto de input para filtrar
+            $('.tfoot_search').each(function () {
+                var title = $(this).text();
+                $(this).html('<input type="text" style="width: 100%" placeholder="' + title + '" />');
+            });
             var table_pac = $("#pac_table").DataTable({
                 lengthMenu: [[5, 10, -1], [5, 10, 'Todo']],
                 "language": {
@@ -193,47 +268,38 @@
 //                    targets: -1,
                     visible: false
                 }],
-                "footerCallback": function (row, data, start, end, display) {
-                    var api = this.api(), data;
+                initComplete: function () {
+                    this.api().columns().every(function () {
+                        var column = this;
+                        //input text
+                        if ($(column.footer()).hasClass('tfoot_search')) {
+                            //aplicar la busquedad
+                            var that = this;
+                            $('input', this.footer()).on('keyup change', function () {
+                                if (that.search() !== this.value) {
+                                    that.search(this.value).draw();
+                                }
+                            });
 
-                    // formatear los datos para sumar
-                    var intVal = function (i) {
-                        return typeof i === 'string' ? i.replace(/[\$,]/g, '') * 1 : typeof i === 'number' ? i : 0;
-                    };
+                        }
+                        else if ($(column.footer()).hasClass('tfoot_select')) { //select
+                            var column = this;
+                            //aplicar la busquedad
+                            var select = $('<select style="width: 100%"><option value=""></option></select>')
+                                .appendTo($(column.footer()).empty())
+                                .on('change', function () {
+                                    var val = $.fn.dataTable.util.escapeRegex(
+                                        $(this).val()
+                                    );
+                                    column.search(val ? '^' + val + '$' : '', true, false).draw();
+                                });
 
-                    // Total en todas las paginas
-                    total_pre = api.column(1).data().reduce(function (a, b) {
-                        return (intVal(a) + intVal(b)).toFixed(2);
-                    }, 0);
-                    total_ejec = api.column(2).data().reduce(function (a, b) {
-                        return (intVal(a) + intVal(b)).toFixed(2);
-                    }, 0);
-                    total_dev = api.column(3).data().reduce(function (a, b) {
-                        return (intVal(a) + intVal(b)).toFixed(2);
-                    }, 0);
-                    total_disp = api.column(4).data().reduce(function (a, b) {
-                        return (intVal(a) + intVal(b)).toFixed(2);
-                    }, 0);
-
-                    // Total en la pagina actual
-                    pageTotal_pre = api.column(1, {page: 'current'}).data().reduce(function (a, b) {
-                        return (intVal(a) + intVal(b)).toFixed(2);
-                    }, 0);
-                    pageTotal_ejec = api.column(2, {page: 'current'}).data().reduce(function (a, b) {
-                        return (intVal(a) + intVal(b)).toFixed(2);
-                    }, 0);
-                    pageTotal_dev = api.column(3, {page: 'current'}).data().reduce(function (a, b) {
-                        return (intVal(a) + intVal(b)).toFixed(2);
-                    }, 0);
-                    pageTotal_disp = api.column(4, {page: 'current'}).data().reduce(function (a, b) {
-                        return (intVal(a) + intVal(b)).toFixed(2);
-                    }, 0);
-
-                    // actualzar total en el pie de tabla
-                    $(api.column(1).footer()).html('$' + pageTotal_pre + '<p style="color: #0c199c">' + ' ( $' + total_pre + ' )' + '</p>');
-                    $(api.column(2).footer()).html('$' + pageTotal_ejec + '<p style="color: #0c199c">' + ' ( $' + total_ejec + ' )' + '</p>');
-                    $(api.column(3).footer()).html('$' + pageTotal_dev + '<p style="color: #0c199c">' + ' ( $' + total_dev + ' )' + '</p>');
-                    $(api.column(4).footer()).html('$' + pageTotal_disp + '<p style="color: #0c199c">' + ' ( $' + total_disp + ' )' + '</p>');
+                            column.data().unique().sort().each(function (d, j) {
+                                console.log(d);
+                                select.append('<option value="' + d + '">' + d + '</option>')
+                            });
+                        }
+                    });
                 }
             });
 

@@ -19,7 +19,7 @@
         <hr>
 
         <div class="panel panel-info">
-            <div class="panel-heading clearfix">PAC-FDG
+            <div class="panel-heading clearfix">Planificación anual - FDG
                 <a href="#!" class="btn-collapse pull-right" data-toggle="collapse" data-target="#poa-area"
                    aria-expanded="false" aria-controls="poa-area"><i class="fa fa-minus"></i></a>
             </div>

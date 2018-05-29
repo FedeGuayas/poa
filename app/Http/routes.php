@@ -62,6 +62,7 @@ Route::group(['prefix' => 'admin','middleware'=>'auth'], function () {
 
     //Vista planificacion para agregar inclusion Pac o No Pac
     Route::get('pacs/inclusion/areas',['uses'=>'InclusionController@indexIncPac', 'as'=>'indexIncPac']);
+    Route::get('pacs/inclusion/edit',['uses'=>'InclusionController@incPacEdit', 'as'=>'indexIncPac']);
     //vista para generar el pdf de la Solicitud de Inclusion PAC
     Route::get('pacs/inclusion_pac/create',['uses'=>'InclusionController@createIPAC', 'as'=>'create.inclusion-pac']);
     //guardar info de la Solicitud de Inclusion PAC
@@ -111,7 +112,7 @@ Route::group(['prefix' => 'admin','middleware'=>'auth'], function () {
     Route::get('poafdg/area/{data?}',['uses'=>'PoaController@loadItemArea', 'as'=>'loadItemArea']);
     Route::post('poafdg/planificacion',['uses'=>'PoaController@storePlanificacion', 'as'=>'storePlanificacion']);
 
-    //vista agregar inclusion
+    //vista agregar inclusion POA
     Route::get('poafdg/inclusion',['uses'=>'InclusionController@poaInclusion', 'as'=>'admin.inclusion']);
     Route::get('poafdg/inclusion/getitem',['uses'=>'InclusionController@getItem', 'as'=>'inclusion.getItem']);
     Route::get('poafdg/inclusion/codigo',['uses'=>'InclusionController@getUniqueItem', 'as'=>'inclusion.getUniqueItem']);

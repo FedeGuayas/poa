@@ -24,6 +24,7 @@
             <div class="panel-body collapse in" id="poa_destino">
                 {!! Form::open(['id'=>'form-enviar_destino']) !!}
                 {!! Form::hidden('reforma_id',null,['id'=>'reforma_id']) !!}
+                {!! Form::hidden('tipo_de_reforma',$tipo_reforma,['id'=>'tipo_de_reforma']) !!}
                 <div class="row">
                     <div class="col-sm-10">
                         <div class="form-group">
@@ -326,6 +327,8 @@
             var mes = row.find("td").eq(3).html();
             var disponible = parseFloat($("#monto_reforma").val());
             var resto = parseFloat($("#por_distribuir").val());
+            var tipo_reforma = $("#tipo_de_reforma").val();
+
 
             swal({
                     title: "Monto!",
@@ -339,7 +342,6 @@
                 },
                 function (inputValue) {
                     if (inputValue === false) {//si se da en cancel
-                        console.log("cancelo");
                         return false;
                     } else { //acepto
                         if (parseFloat(inputValue) > resto) {
@@ -350,7 +352,7 @@
                             swal.showInputError("Necestita escribir un valor!");
                             return false;
                         }
-                        agregar_reforma_destino(inputValue, row, pac_idd, item, mes);
+                        agregar_reforma_destino(inputValue, row, pac_idd, item, mes, tipo_reforma);
                     }
 
                 });
@@ -359,7 +361,7 @@
         });
 
         var contd = 0, totd = 0, resto = 0, subtotald = [];
-        function agregar_reforma_destino(inputValue, row, pac_idd, item, mes) {
+        function agregar_reforma_destino(inputValue, row, pac_idd, item, mes, tipo_reforma) {
 
             var destino = $("#destino");
             var disponible = $("#monto_reforma").val();
@@ -369,7 +371,12 @@
 
             if (totd <= disponible) {
 
-                var filad = '<tr class="selecte" id="filad' + contd + '"><td><button data-contador="' + contd + '" class="btn btn-xs btn-danger eliminard" title="Eliminar"><i class="fa fa-trash-o" aria-hidden="true"></i><input type="hidden" name="pac_idd[]" value="' + pac_idd + '"></button></td><td>' + mes + '</td><td>' + item + '</td><td><textarea name="justificativo_destino[]" style="width: 100%;"></textarea></td><td style="color: #5cb85c"><input type="hidden" name="subtotal_idd[]" value="' + subtotald[contd] + '"><b>$ ' + subtotald[contd].toFixed(2) + '</b></td></tr>';
+                if (tipo_reforma==='INTERNA'){ //sin justificativo destino
+                    var filad = '<tr class="selecte" id="filad' + contd + '"><td><button data-contador="' + contd + '" class="btn btn-xs btn-danger eliminard" title="Eliminar"><i class="fa fa-trash-o" aria-hidden="true"></i><input type="hidden" name="pac_idd[]" value="' + pac_idd + '"></button></td><td>' + mes + '</td><td>' + item + '</td><td style="color: #5cb85c"><input type="hidden" name="subtotal_idd[]" value="' + subtotald[contd] + '"><b>$ ' + subtotald[contd].toFixed(2) + '</b></td></tr>';
+                }else {
+                    var filad = '<tr class="selecte" id="filad' + contd + '"><td><button data-contador="' + contd + '" class="btn btn-xs btn-danger eliminard" title="Eliminar"><i class="fa fa-trash-o" aria-hidden="true"></i><input type="hidden" name="pac_idd[]" value="' + pac_idd + '"></button></td><td>' + mes + '</td><td>' + item + '</td><td><textarea name="justificativo_destino[]" style="width: 100%;"></textarea></td><td style="color: #5cb85c"><input type="hidden" name="subtotal_idd[]" value="' + subtotald[contd] + '"><b>$ ' + subtotald[contd].toFixed(2) + '</b></td></tr>';
+                }
+
                 destino.append(filad);
                 evaluar_enviar_destino();
 //                $("#total_destino").html("$ " + totd.toFixed(2));
@@ -475,7 +482,6 @@
                 },
                 error: function (response) {
                     load.addClass('hidden');
-                    console.log(response);
                 }
             });
         });

@@ -9,6 +9,8 @@ use App\Cpresupuestaria;
 use App\Detalle;
 use App\InclusionPac;
 use App\Pac;
+use App\PacDestino;
+use App\PacOrigen;
 use App\ReformType;
 use App\Srpac;
 use App\Worker;
@@ -33,7 +35,7 @@ class PacController extends Controller
     }
 
     /**
-     * Vista para crear la planificacion
+     * Vista para crear la planificacion de las areas, creando los procesos que no sea inclusion PROCESOS/Planifiacacion
      *
      * @return \Illuminate\Http\Response
      */
@@ -72,12 +74,24 @@ class PacController extends Controller
                 ->where('p.inclusion', Pac::PROCESO_INCLUSION_NO)//mostrar los pac que no sean inclusion
                 ->get();
 
+
+            $pacs = collect($pacs);
+
+            //Filtro para enviar a la vista solo los pacs necesarios
+            $pacs = $pacs->filter(function ($pac, $key) use ($user_login) {
+                //Si el usuario pertenece al area a la que se repartio el dinero,
+                //Si no se han realizado movimientos de dinero en el pac
+                if (($user_login->worker->departamento->area->area == $pac->area || $user_login->hasRole('root')) && $pac->presupuesto == $pac->disponible) {
+                    return true;
+                } else return false;
+            })->values();
+
             return view('pac.planificacion', compact('list_areas', 'area_item', 'area_select', 'pacs', 'area'));
         } else return abort(403);
     }
 
     /**
-     * Lista El PAC del Area
+     * Lista todos los procesos PROCESOS/Procesos
      *
      * @return \Illuminate\Http\Response
      */
@@ -120,12 +134,12 @@ class PacController extends Controller
 
         $pacs = collect($pacs);//convierto a colleccion para poder utilizar map()
 
-        //Filtro para enviar a la vusta solo lo necesario
+        //Filtro para enviar a la vista solo lo necesario
         $pacs = $pacs->filter(function ($item, $key) use ($user_login) {
             //   Si el usuario autenticado es el dueño del proceso y si tiene el role (responsable-pac),
             //   o el trabajador pertenece al area que se asigno el pac y es analista o responsable-poa,
             //   o  es root, administrador o financiero, mostrarlo
-            if ( (($user_login->worker_id == $item->trabajador_id) && $user_login->hasRole('responsable-pac') || ($user_login->worker->departamento->area_id == $item->area_trabajador && ($user_login->hasRole('analista') || $user_login->hasRole('responsable-poa'))) ) || ($user_login->hasRole('root') || $user_login->hasRole('administrador') || $user_login->hasRole('financiero')) ) {
+            if ((($user_login->worker_id == $item->trabajador_id) && $user_login->hasRole('responsable-pac') || ($user_login->worker->departamento->area_id == $item->area_trabajador && ($user_login->hasRole('analista') || $user_login->hasRole('responsable-poa')))) || ($user_login->hasRole('root') || $user_login->hasRole('administrador') || $user_login->hasRole('financiero'))) {
                 return true;
             } else return false;
         })->values();
@@ -177,7 +191,7 @@ class PacController extends Controller
     }
 
     /**
-     * Vista para crear PAC del area
+     * Vista para crear Los Procesos para cada item por area  PROCESOS/Planificacion -> boton billete
      *
      * @return \Illuminate\Http\Response
      */
@@ -209,12 +223,11 @@ class PacController extends Controller
 
             //valor asignado a este item en la planificacion del pac
             $pac_presupuesto = $area_item->pacs()->where('mes', $area_item->mes)->sum('presupuesto');
-            //$pacs2=AreaItem::has('pacs')->get();
 
             //maximo que se puede distribuir al responsable de este pac
             $total_disponible = $area_item->monto - $pac_presupuesto;
 
-            //pac
+            //procesos del poa y que no sean inclusion
             $pacs = DB::table('area_item as ai')
                 ->join('pacs as p', 'p.area_item_id', '=', 'ai.id')
                 ->join('months as m', 'm.cod', '=', 'p.mes')
@@ -223,6 +236,7 @@ class PacController extends Controller
                 ->join('workers as w', 'w.id', '=', 'p.worker_id')
                 ->select('p.id', 'p.cod_item', 'p.item', 'm.month as mes', 'p.presupuesto', 'p.disponible', 'p.devengado', 'w.nombres', 'w.apellidos', 'p.procedimiento', 'p.concepto')
                 ->where('p.area_item_id', $id)
+                ->where('p.inclusion', Pac::PROCESO_INCLUSION_NO)
                 ->get();
 
             return view('pac.createPac', compact('area_item', 'list_workers', 'area', 'total_disponible', 'codigos', 'pacs'));
@@ -231,7 +245,7 @@ class PacController extends Controller
 
 
     /**
-     * Guardar el proceso pac
+     * Guardar el proceso
      *
      * @param  \Illuminate\Http\Request $request
      * @return \Illuminate\Http\Response
@@ -269,7 +283,7 @@ class PacController extends Controller
             $pac->worker()->associate($worker);
             $pac->save();
 
-            return redirect()->route('indexPlanificacion')->with('message', 'PAC asignado correctamente');
+            return redirect()->route('indexPlanificacion')->with('message', 'Proceso guardado correctamente');
         } else return abort(403);
     }
 
@@ -342,6 +356,9 @@ class PacController extends Controller
             $presupuesto_nuevo = $request->input('presupuesto');
             $total_disponible = $request->input('total_disponible');
 
+            if ($pac->tipo_compra != strtoupper($request->input('tipo_compra'))){
+                return back()->with('message_danger', 'El tipo de compra solo puede ser cambiado mediante reforma');
+            }
 
             if ($presupuesto_nuevo <= $presupuesto_actual) {
                 $sub = $presupuesto_actual - $presupuesto_nuevo;
@@ -373,31 +390,49 @@ class PacController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Eliminar el proceso
      *
      * @param  int $id
      * @return \Illuminate\Http\Response
      */
     public function destroy(Request $request, $id)
     {
-        $pac = Pac::findOrFail($id);
-
         $user_login = $request->user();
 
         if ($user_login->can('planifica-pac')) {
 
-            $gestiones = $pac->detalles;
+            try {
+                DB::beginTransaction();
 
-            if (count($gestiones) > 0) {
-                $message = 'No se puede eliminar porque existen gestiones en el pac seleccionado';
-                return response()->json(['message' => $message]);
-            } else {
+                $pac = Pac::findOrFail($id);
+
+                $reforma_origen=PacOrigen::where('pac_id',$pac->id)->first();
+                $reforma_destino=PacDestino::where('pac_id',$pac->id)->first();
+                $gestion=Detalle::where('pac_id',$pac->id)->first();
+
+                //si el proceso es una inclusion o  esta en alguna reforma o alguna gestion, no eliminar
+                if ($pac->inclusion===Pac::PROCESO_INCLUSION_SI || $reforma_origen || $reforma_destino || $gestion){
+                    $message = 'El proceso no puede ser eliminado porque o es una inclusión, o se encuentra asociado a una reforma o gestion';
+                    return response()->json(['message' => $message,'tipo'=>'error']);
+                }
+
                 $pac->delete();
-                $message = 'Pac eliminado';
+                $message = 'Proceso eliminado';
+
+                DB::Commit();
+
                 if ($request->ajax()) {
                     return response()->json(['message' => $message]);
                 }
+
+            } catch
+            (\Exception $e) {
+                DB::Rollback();
+                $message = 'Existen gestiones vinculadass a esta proceso y no pueden ser eliminado';
+//            $message = $e->getMessage();
+                return response()->json(['message' => $message, 'tipo' => 'error']);
             }
+
         } else return abort(403);
     }
 

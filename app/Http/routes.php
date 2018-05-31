@@ -62,7 +62,12 @@ Route::group(['prefix' => 'admin','middleware'=>'auth'], function () {
 
     //Vista planificacion para agregar inclusion Pac o No Pac
     Route::get('pacs/inclusion/areas',['uses'=>'InclusionController@indexIncPac', 'as'=>'indexIncPac']);
-    Route::get('pacs/inclusion/edit',['uses'=>'InclusionController@incPacEdit', 'as'=>'indexIncPac']);
+    Route::get('pac/create/inclusion/{area_item}',['uses'=>'InclusionController@createPacInclusion', 'as'=>'createPacInclusion']);
+    Route::post('pac/store/inclusion',['uses'=>'InclusionController@storePacInclusion', 'as'=>'storePacInclusion']);
+    Route::get('pac/inclusion/{id}/edit',['uses'=>'InclusionController@incPacEdit', 'as'=>'editIncPac']);
+    Route::put('pac/inclusion/{id}/update',['uses'=>'InclusionController@incPacUpdate', 'as'=>'updateIncPac']);
+    Route::delete('pacs/inclusion/{id}/destroy',['uses'=>'InclusionController@destroyInclusionPac', 'as'=>'destroyInclusionPac']);
+
     //vista para generar el pdf de la Solicitud de Inclusion PAC
     Route::get('pacs/inclusion_pac/create',['uses'=>'InclusionController@createIPAC', 'as'=>'create.inclusion-pac']);
     //guardar info de la Solicitud de Inclusion PAC
@@ -119,9 +124,6 @@ Route::group(['prefix' => 'admin','middleware'=>'auth'], function () {
     Route::get('poafdg/inclusion/area/{data?}',['uses'=>'InclusionController@loadItemArea', 'as'=>'inclusion.loadItemArea']);
     Route::post('poafdg/inclusion',['uses'=>'InclusionController@storeInclusion', 'as'=>'storeInclusion']);
     Route::delete('poafdg/inclusion/{id}/eliminar',['uses'=>'InclusionController@destroy', 'as'=>'destroyInclusion']);
-    //vista para crear el proceso de la inclusion a nivel de area
-    Route::get('pac/create/inclusion/{area_item}',['uses'=>'InclusionController@createPacInclusion', 'as'=>'createPacInclusion']);
-    Route::post('pac/store/inclusion',['uses'=>'InclusionController@storePacInclusion', 'as'=>'storePacInclusion']);
 
     Route::get('reformas/solicitud',['uses'=>'ReformaController@createReforma', 'as'=>'createReforma']);//origen reforma
     Route::get('reformas/destino',['uses'=>'ReformaController@destino', 'as'=>'destinoReforma']);//destino reforma

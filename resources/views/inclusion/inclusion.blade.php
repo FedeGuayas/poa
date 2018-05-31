@@ -180,12 +180,16 @@
                             data:data,
                             type: 'POST',
                             success: function (response) {
-                                swal("Confirmado!", response.message,"success");
-                                row.fadeOut();
-                                item.val("option:eq(0)").prop('selected', true);
-                                area.val("option:eq(0)").prop('selected', true);
-                                item.selectpicker("refresh");
-                                area.selectpicker("refresh");
+                                if (response.tipo==='error' ) {
+                                    swal("", response.message,"error");
+                                }else {
+                                    swal("Confirmado!", response.message,"success");
+                                    row.fadeOut();
+                                    item.val("option:eq(0)").prop('selected', true);
+                                    area.val("option:eq(0)").prop('selected', true);
+                                    item.selectpicker("refresh");
+                                    area.selectpicker("refresh");
+                                }
                             },
                             error: function (response) {
                                 row.show();

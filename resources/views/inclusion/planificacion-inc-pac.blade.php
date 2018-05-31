@@ -135,7 +135,7 @@
                                 @if (Auth::user()->worker->departamento->area->area==$inc->area || Auth::user()->hasRole('root'))
                                     {{--Si no se han realizado movimientos de dinero en el pac--}}
                                     @if ($inc->presupuesto == 0 )
-                                        <a href="{{route('admin.pacs.edit',$inc->id)}}"
+                                        <a href="{{route('editIncPac',$inc->id)}}"
                                         class="btn btn-xs btn-success tip"
                                         data-placement="top" title="Editar"> <i class="fa fa-pencil"></i>
                                         </a>
@@ -156,11 +156,8 @@
         </div>{{--./panel-success--}}
     </div>{{--./col-md-12--}}
 
-
-
-
-    {{--{!! Form::open(['route'=>['admin.pacs.destroy',':ID'],'method'=>'DELETE','id'=>'form-delete']) !!}--}}
-    {{--{!! Form::close() !!}--}}
+    {!! Form::open(['route'=>['destroyInclusionPac',':ID'],'method'=>'DELETE','id'=>'form-delete']) !!}
+    {!! Form::close() !!}
 
 @endsection
 
@@ -295,7 +292,6 @@
                                 });
 
                             column.data().unique().sort().each(function (d, j) {
-                                console.log(d);
                                 select.append('<option value="' + d + '">' + d + '</option>')
                             });
                         }
@@ -362,7 +358,7 @@
             var data = form.serialize();
             swal({
                     title: "Confirme para eliminar !",
-                    text: "Se eliminará el pac!. Esta acción no se podrá deshacer!",
+                    text: "Se eliminará la INCLUSION. Esta acción no se podrá deshacer!",
                     type: "info",
                     showCancelButton: true,
                     confirmButtonColor: "#DD6B55",
@@ -370,7 +366,7 @@
                     cancelButtonText: " NO!",
                     closeOnConfirm: false,
                     closeOnCancel: false,
-                    showLoaderOnConfirm: true,
+                    showLoaderOnConfirm: true
                 },
                 function (isConfirm) {
                     if (isConfirm) {
@@ -379,8 +375,12 @@
                             data: data,
                             type: 'POST',
                             success: function (response) {
-                                swal("Confirmado!", response.message, "success");
-                                row.fadeOut();
+                                if (response.tipo==='error'){
+                                    swal("", response.message, "error");
+                                }else {
+                                    swal("Confirmado!", response.message, "success");
+                                    row.fadeOut();
+                                }
                             },
                             error: function (response) {
                                 row.show();

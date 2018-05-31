@@ -53,7 +53,7 @@
             <tfoot>
             <tr>
                 <td class="tfoot_search">No.</td>
-                <td></td>
+                <td class="tfoot_select"></td>
                 <td></td>
                 <td></td>
                 <td class="tfoot_search">Mes</td>

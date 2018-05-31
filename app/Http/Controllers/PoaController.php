@@ -6,7 +6,9 @@ use App\Area;
 use App\AreaItem;
 use App\Item;
 use App\Month;
+use App\Pac;
 use App\Programa;
+use App\Reforma;
 use Illuminate\Http\Request;
 
 use App\Http\Requests;
@@ -78,11 +80,22 @@ class PoaController extends Controller
      */
     public function update(Request $request, $id)
     {
+
+
         try {
             DB::beginTransaction();
 
-
             $poafdg = AreaItem::findOrFail($id);
+
+            //  $pacs=Pac::where('area_item_id',0)->first();=$poafdg->pacs()
+
+            //si ya el poafdg (area_item) tiene distribuido dinero en los pacs, no permitir editar
+            if (count($poafdg->pacs()))
+            {
+                $message='No es posible editar el monto porque existen procesos asignados a este item';
+                return response()->json(['message' => $message,'tipo'=>'error']);
+            }
+
             $monto = $poafdg->monto;
 
             $item = Item::where('id', $poafdg->item_id)->first();
@@ -122,7 +135,7 @@ class PoaController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Eliminar la planificacion del poafdg mes area
      *
      * @param  int $id
      * @return \Illuminate\Http\Response
@@ -134,6 +147,14 @@ class PoaController extends Controller
             $poafdg = AreaItem::findOrFail($id);
             $monto = $poafdg->monto;
 
+            $reforma=Reforma::where('area_item_id',$poafdg->id)->first();
+
+            //si el planificado esta asignado a una reforma, no eliminar
+            if ($reforma){
+                $message = 'El planificado del poa no puede ser eliminado porque se encuentra asociado a una reforma';
+                return response()->json(['message' => $message,'tipo'=>'error']);
+            }
+
             $mes=Month::where('cod',$poafdg->mes)->first();
 
             $item_id = $poafdg->item_id;
@@ -144,7 +165,7 @@ class PoaController extends Controller
             $item->update();
 
             $poafdg->delete();
-            $message = 'Monto del mes ' . $mes->month . ' eliminado';
+            $message = 'Monto planificado para el mes ' . $mes->month . ' eliminado';
 
             DB::Commit();
             if ($request->ajax()) {
@@ -152,10 +173,10 @@ class PoaController extends Controller
             }
 
         }catch (\Exception $e){
-            DB::Rollback();
+            DB::rollback();
             $message = 'Existen procesos vinculados a esta programación del mes de ' . $mes->month . ' y que no pueden ser eliminados';
 //            $message = $e->getMessage();
-            return response()->json(['message' => $message]);
+            return response()->json(['message' => $message,'tipo'=>'error']);
         }
 
     }
@@ -227,7 +248,7 @@ class PoaController extends Controller
 
 
     /**
-     *  Cargar el dinero DEL POA repartido para esa area
+     *  Mostrar detalle de la programacion del poa para esa area y  que no sea una inclusion
      * @param Request $request
      * @return mixed
      */
@@ -240,6 +261,7 @@ class PoaController extends Controller
             ->select('ai.id', 'ai.item_id', 'ai.monto', 'ai.mes', 'ai.area_id', 'ai.item_id', 'm.month')
             ->where('area_id', $area_id)
             ->where('item_id', $item_id)
+            ->where('inclusion',AreaItem::INCLUSION_NO)
             ->get();
         $total = 0;
         foreach ($area_item as $ai) {
@@ -250,7 +272,9 @@ class PoaController extends Controller
 
     /**
      * Guardar planificacion del poa del areaa
+     *
      * @param Request $request
+     *
      * @return $this|\Illuminate\Http\RedirectResponse
      */
     public function storePlanificacion(Request $request)

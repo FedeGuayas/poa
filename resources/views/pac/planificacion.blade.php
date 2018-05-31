@@ -132,22 +132,14 @@
                             <td>{{$pac->mes}}</td>
                             <td>{{$pac->nombres}} {{$pac->apellidos}}</td>
                             <td>
-                                @permission('planifica-pac')
-                                {{--Si el usuario pertenece al area a la que se repartio el dinero--}}
-                                @if (Auth::user()->worker->departamento->area->area==$pac->area || Auth::user()->hasRole('root'))
-                                    {{--Si no se han realizado movimientos de dinero en el pac--}}
-                                    @if ($pac->presupuesto == $pac->disponible)
-                                        <a href="{{route('admin.pacs.edit',$pac->id)}}"
-                                           class="btn btn-xs btn-success tip"
-                                           data-placement="top" title="Editar"> <i class="fa fa-pencil"></i>
-                                        </a>
-                                        <a href="#!" class="btn btn-xs btn-danger delete tip" data-placement="top"
-                                           title="Eliminar"
-                                           data-id="{{$pac->id}}"><i class="fa fa-trash-o"></i>
-                                        </a>
-                                    @endif
-                                @endif
-                                @endpermission
+                                <a href="{{route('admin.pacs.edit',$pac->id)}}"
+                                   class="btn btn-xs btn-success tip"
+                                   data-placement="top" title="Editar"> <i class="fa fa-pencil"></i>
+                                </a>
+                                <a href="#!" class="btn btn-xs btn-danger delete tip" data-placement="top"
+                                   title="Eliminar"
+                                   data-id="{{$pac->id}}"><i class="fa fa-trash-o"></i>
+                                </a>
                             </td>
                         </tr>
                     @endforeach
@@ -393,7 +385,7 @@
             var data = form.serialize();
             swal({
                     title: "Confirme para eliminar !",
-                    text: "Se eliminará el proceso!. Esta acción no se podrá deshacer!",
+                    text: "Se eliminará el PROCESO. Esta acción no se podrá deshacer!",
                     type: "info",
                     showCancelButton: true,
                     confirmButtonColor: "#DD6B55",
@@ -410,8 +402,12 @@
                             data: data,
                             type: 'POST',
                             success: function (response) {
-                                swal("Confirmado!", response.message, "success");
-                                row.fadeOut();
+                                if (response.tipo==='error'){
+                                    swal("", response.message, "error");
+                                }else {
+                                    swal("Confirmado!", response.message, "success");
+                                    row.fadeOut();
+                                }
                             },
                             error: function (response) {
                                 row.show();

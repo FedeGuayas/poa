@@ -4,11 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Area;
 use App\AreaItem;
+use App\Detalle;
 use App\InclusionPac;
 use App\Item;
 use App\Month;
 use App\Pac;
+use App\PacDestino;
+use App\PacOrigen;
 use App\Programa;
+use App\Reforma;
 use App\Worker;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -29,7 +33,163 @@ class InclusionController extends Controller
     }
 
     /**
-     * Vista para crear la planificacion de las inclusiones pac
+     * Muestra vista para crear Inclusion Poa de FDG para item poa no programado en un mes determinado
+     * @param Request $request
+     * @return mixed
+     */
+    public function poaInclusion(Request $request)
+    {
+
+        $programas = Programa::select(DB::raw('concat (cod_programa," - ",programa) as programa,id'))->get();
+        $list_programs = $programas->pluck('programa', 'id');
+
+        $areas = Area::all();
+        $list_areas = $areas->pluck('area', 'id');
+
+        $meses = Month::select(DB::raw('month,cod'))->get();
+        $list_meses = $meses->pluck('month', 'cod');
+
+        $mes = $request->input('mes');
+
+        if ($request->ajax()) {
+            $prog_id = $request->get('prog_id');
+            $prog = Programa::where('id', $prog_id)->first();
+            $actividad_list = $prog->actividads;
+
+            return response()->json($actividad_list);
+        }
+        return view('inclusion.inclusion', compact('list_programs', 'list_areas', 'list_meses', 'mes'));
+
+    }
+
+    /**
+     * cargar item al seleccionar la actividad, para la inclusion
+     */
+    public function getItem(Request $request)
+    {
+
+        if ($request->ajax()) {
+            $prog_id = $request->input('prog_id');
+            $act_id = $request->input('act_id');
+
+            $act_prog_id = DB::table('actividad_programa')->where('actividad_id', $act_id)->where('programa_id', $prog_id)->first();
+
+            //nuevo item =>presupuesto=0
+//            $items = Item::where('actividad_programa_id', $act_prog_id->id)->where('presupuesto', '=', 0)->get();
+            //todos los items
+            $items = Item::where('actividad_programa_id', $act_prog_id->id)->get();
+
+            return response()->json($items);
+        }
+    }
+
+    /**
+     * Codigo unico de programa-actividad-item
+     * @param Request $request
+     * @return mixed
+     */
+    public function getUniqueItem(Request $request)
+    {
+        $item_id = $request->input('item_id');
+        $item = Item::with('extras', 'areas')->where('id', $item_id)->first();
+
+        if ($request->ajax()) {
+            return response()->json($item);
+        }
+    }
+
+    /**
+     *  Cargar detalles de las inclusiones DEL POA repartido para esa area
+     * @param Request $request
+     * @return mixed
+     */
+    public function loadItemArea(Request $request)
+    {
+        $area_id = $request->input('area_id');
+        $item_id = $request->input('item_id');
+        $area_item = DB::table('area_item as ai')
+            ->join('months as m', 'm.cod', '=', 'ai.mes')
+            ->select('ai.id', 'ai.item_id', 'ai.monto', 'ai.mes', 'ai.area_id', 'ai.item_id', 'm.month')
+            ->where('area_id', $area_id)
+            ->where('item_id', $item_id)
+            ->get();
+
+        return view('inclusion.listInclusion', compact('area_item'));
+    }
+
+    /**
+     * Guardar inclusion poa del area en la tabla area_item como inclusion con monto $0
+     * @param Request $request
+     * @return $this|\Illuminate\Http\RedirectResponse
+     */
+    public function storeInclusion(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            $item = Item::where('id', $request->input('item'))->first();
+            $areas = $request->input('area_id');
+            $meses = $request->input('mes');
+            $montos = $request->input('subtotal_id');
+
+            $cont = 0;
+            while ($cont < count($areas)) {
+                $item->areas()->attach($areas[$cont], ['monto' => $montos[$cont], 'mes' => $meses[$cont], 'inclusion' => AreaItem::INCLUSION_YES]);
+                $cont++;
+            }
+
+            DB::commit();
+            return redirect()->route('admin.inclusion')->with('message', 'Inclusión POA Guardada');
+        } catch (\Exception $e) {
+            DB::rollback();
+            return redirect()->route('admin.inclusion')->with('message_danger', 'Error no se guardaron los registros en la BBDD');
+//                return redirect()->route('admin.inclusion')->with('message_danger',$e->getMessage());
+        }
+
+    }
+
+    /**
+     * Eliminar la inclusión POA
+     *
+     * @param  int $id
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy(Request $request, $id)
+    {
+        try {
+            DB::beginTransaction();
+
+            $poafdg = AreaItem::findOrFail($id);
+
+            $mes = Month::where('cod', $poafdg->mes)->first();
+
+            $reforma=Reforma::where('area_item_id',$poafdg->id)->first();
+
+            //si el poa no es inclusion o esta en alguna reforma, no eliminar
+            if ($poafdg->inclusion===AreaItem::INCLUSION_NO || $reforma){
+                $message = 'La inclusión no puede ser eliminada porque o no es una inclusión, o se encuentra asociado a una reforma';
+                return response()->json(['message' => $message,'tipo'=>'error']);
+            }
+
+            $poafdg->delete();
+            $message = 'Inclusion del mes ' . $mes->month . ' eliminada';
+
+            DB::Commit();
+
+            return response()->json(['message' => $message]);
+
+        } catch
+        (\Exception $e) {
+            DB::Rollback();
+            $message = 'Ocurrio un error al intentar eliminar la inclusión';
+//            $message = $e->getMessage();
+            return response()->json(['message' => $message, 'tipo' => 'error']);
+        }
+
+
+    }
+
+    /**
+     * Vista para crear la planificacion de las inclusiones de los procesos pac o no pac /Procesos/Inclusion
      * Muestar todos los poas de las areas, los de item nuevos en rojo y los existentes en verde
      *
      * @return \Illuminate\Http\Response
@@ -72,138 +232,6 @@ class InclusionController extends Controller
         } else return abort(403);
     }
 
-    /**
-     * Muestra vista para crear Inclusion Poa de FDG para item poa no existente
-     * @param Request $request
-     * @return mixed
-     */
-    public function poaInclusion(Request $request)
-    {
-
-        $programas = Programa::select(DB::raw('concat (cod_programa," - ",programa) as programa,id'))->get();
-        $list_programs = $programas->pluck('programa', 'id');
-
-        $areas = Area::all();
-        $list_areas = $areas->pluck('area', 'id');
-
-        $meses = Month::select(DB::raw('month,cod'))->get();
-        $list_meses = $meses->pluck('month', 'cod');
-
-        $mes = $request->input('mes');
-
-        if ($request->ajax()) {
-            $prog_id = $request->get('prog_id');
-            $prog = Programa::where('id', $prog_id)->first();
-            $actividad_list = $prog->actividads;
-
-            return response()->json($actividad_list);
-        }
-        return view('inclusion.inclusion', compact('list_programs', 'list_areas', 'list_meses', 'mes'));
-
-    }
-
-    /**
-     * cargar item al seleccionar la actividad, para la inclusion solo los que tiene monto inicial 0
-     */
-    public function getItem(Request $request)
-    {
-
-        if ($request->ajax()) {
-            $prog_id = $request->input('prog_id');
-            $act_id = $request->input('act_id');
-
-            $act_prog_id = DB::table('actividad_programa')->where('actividad_id', $act_id)->where('programa_id', $prog_id)->first();
-
-//            $items = Item::where('actividad_programa_id', $act_prog_id->id)->where('presupuesto', '=', 0)->get();
-            $items = Item::where('actividad_programa_id', $act_prog_id->id)->get();
-
-            return response()->json($items);
-        }
-    }
-
-    /**
-     * Codigo unico de programa-actividad-item
-     * @param Request $request
-     * @return mixed
-     */
-    public function getUniqueItem(Request $request)
-    {
-        $item_id = $request->input('item_id');
-        $item = Item::with('extras', 'areas')->where('id', $item_id)->first();
-
-        if ($request->ajax()) {
-            return response()->json($item);
-        }
-    }
-
-    /**
-     *  Cargar el dinero DEL POA repartido para esa area
-     * @param Request $request
-     * @return mixed
-     */
-    public function loadItemArea(Request $request)
-    {
-        $area_id = $request->input('area_id');
-        $item_id = $request->input('item_id');
-        $area_item = DB::table('area_item as ai')
-            ->join('months as m', 'm.cod', '=', 'ai.mes')
-            ->select('ai.id', 'ai.item_id', 'ai.monto', 'ai.mes', 'ai.area_id', 'ai.item_id', 'm.month')
-            ->where('area_id', $area_id)
-            ->where('item_id', $item_id)
-            ->get();
-
-        return view('inclusion.listInclusion', compact('area_item'));
-    }
-
-    /**
-     * Guardar inclusion del poa del area
-     * @param Request $request
-     * @return $this|\Illuminate\Http\RedirectResponse
-     */
-    public function storeInclusion(Request $request)
-    {
-        try {
-            DB::beginTransaction();
-            $item = Item::where('id', $request->input('item'))->first();
-            $areas = $request->input('area_id');
-            $meses = $request->input('mes');
-            $montos = $request->input('subtotal_id');
-
-            $cont = 0;
-            while ($cont < count($areas)) {
-                $item->areas()->attach($areas[$cont], ['monto' => $montos[$cont], 'mes' => $meses[$cont], 'inclusion' => AreaItem::INCLUSION_YES]);
-                $cont++;
-            }
-
-            DB::commit();
-            return redirect()->route('admin.inclusion')->with('message', 'Recursos guardados');
-        } catch (\Exception $e) {
-            DB::rollback();
-            return redirect()->route('admin.inclusion')->with('message_danger', 'Error no se guardaron los registros en la BBDD');
-//                return redirect()->route('admin.inclusion')->with('message_danger',$e->getMessage());
-        }
-
-    }
-
-    /**
-     * Eliminar la inclusión POA
-     *
-     * @param  int $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(Request $request, $id)
-    {
-        $poafdg = AreaItem::findOrFail($id);
-
-        $mes = Month::where('cod', $poafdg->mes)->first();
-
-        $poafdg->delete();
-        $message = 'Inclusion del mes ' . $mes->month . ' eliminada';
-        if ($request->ajax()) {
-            return response()->json(['message' => $message]);
-        }
-    }
-
 
     /**
      * Vista para crear inlcusión del proceso del area
@@ -242,7 +270,7 @@ class InclusionController extends Controller
 
 
     /**
-     * Guardar el proceso pac de la inclusion
+     * Guardar el proceso pac de la inclusion, una vez guardado
      *
      * @param  \Illuminate\Http\Request $request
      * @return \Illuminate\Http\Response
@@ -285,7 +313,136 @@ class InclusionController extends Controller
     }
 
     /**
-     * VIsta para crear Solicitud de inclusion pac
+     * Editar la inclusion del proceso
+     * @param Request $request
+     * @param $id
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|void
+     */
+
+    public function incPacEdit(Request $request, $id)
+    {
+        $user_login = $request->user();
+
+        if ($user_login->can('planifica-pac')) {
+
+            $pac=Pac::where('id',$id)->with('area_item','worker')->first();
+//            dd($pac);
+
+            $codigos = DB::table('area_item as ai')
+                ->join('items as i', 'ai.item_id', '=', 'i.id')
+                ->select('i.cod_item', 'i.cod_programa', 'i.cod_actividad', 'i.item')
+                ->where('ai.id', $pac->area_item_id)
+                ->first();
+
+            $workers = Worker::select(DB::raw('concat (nombres," ",apellidos) as nombre,id'))->get();
+            $list_workers = $workers->pluck('nombre', 'id');
+
+            return view('inclusion.editPacInclusion', compact( 'list_workers','codigos','pac'));
+        } else return abort(403);
+
+    }
+
+    /**
+     * Actualizar inclusion
+     * @param Request $request
+     * @param $id
+     * @return \Illuminate\Http\RedirectResponse|void
+     */
+    public function incPacUpdate(Request $request, $id)
+    {
+
+        $user_login = $request->user();
+
+        if ($user_login->can('planifica-pac')) {
+
+            try {
+
+                DB::beginTransaction();
+
+                $pac = Pac::where('id',$id)->first();
+
+                $worker = Worker::where('id', $request->input('worker'))->first();
+
+                $proceso_pac = $request->input('proceso_pac');
+
+                $pac->concepto = strtoupper($request->input('concepto'));
+                $pac->procedimiento = strtoupper($request->input('procedimiento'));
+                $pac->tipo_compra = strtoupper($request->input('tipo_compra'));
+                $pac->cpc = strtoupper($request->input('cpc'));
+
+                if ($proceso_pac == 'on') {
+                    $pac->esProcesoPac();
+                } else $pac->noEsProcesoPac();
+
+                $pac->worker()->associate($worker);
+                $pac->update();
+
+                DB::commit();
+
+                return redirect()->route('indexIncPac')->with('message', 'La inclusion se actualizo correctamente');
+
+            }catch  (\Exception $e){
+                DB::rollback();
+                $message='Error al actualizar los registros';
+//                return redirect()->route('indexIncPac')->with('message_danger', $message);
+                return redirect()->route('indexIncPac')->with('message_danger', $e);
+            }
+
+
+
+        } else return abort(403);
+
+    }
+
+    /**
+     * Eliminar inclusion recien creada que no este ya en reformas
+     *
+     * @param  int $id
+     * @return \Illuminate\Http\Response
+     */
+    public function destroyInclusionPac(Request $request, $id)
+    {
+
+        $user_login = $request->user();
+
+        if ($user_login->can('planifica-pac')) {
+
+            try {
+                DB::beginTransaction();
+
+                $pac = Pac::findOrFail($id);
+
+                $reforma_origen=PacOrigen::where('pac_id',$pac->id)->first();
+                $reforma_destino=PacDestino::where('pac_id',$pac->id)->first();
+                $gestion=Detalle::where('pac_id',$pac->id)->first();
+
+                //si el proceso no es inclusion o esta en alguna reforma o alguna gestion, no eliminar
+                if ($pac->inclusion===Pac::PROCESO_INCLUSION_NO || $reforma_origen || $reforma_destino || $gestion){
+                    $message = 'El proceso no puede ser eliminado porque o no es una inclusión, o se encuentra asociado a una reforma o gestion';
+                    return response()->json(['message' => $message,'tipo'=>'error']);
+                }
+
+                $pac->delete();
+
+                DB::Commit();
+
+                $message = 'Inclusión eliminada';
+                return response()->json(['message' => $message]);
+
+            } catch
+            (\Exception $e) {
+                DB::Rollback();
+                $message = 'Ocurrio un error al intentar eliminar la inclusión';
+//            $message = $e->getMessage();
+                return response()->json(['message' => $message, 'tipo' => 'error']);
+            }
+
+        } else return abort(403);
+    }
+
+
+    /**
+     * VIsta para crear Solicitud de inclusion de procesos pac o no pac
      *
      * @return \Illuminate\Http\Response
      */

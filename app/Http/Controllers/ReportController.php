@@ -506,11 +506,11 @@ class ReportController extends Controller
         $table->addCell(5000,$cellRowContinue);
         $table->addCell(5000,$cellRowContinue);
         $table->addRow();
-        $table->addCell(5000)->addText("Nombre: " .$reforma->user->worker->tratamiento.'. '.$reforma->user->worker->getFullName());
-        $table->addCell(5000)->addText("Nombre: ".$jefe_area->tratamiento.'. '.$jefe_area->nombres.' '.$jefe_area->apellidos);
+        $table->addCell(5000)->addText("Nombre: " .ucwords(strtolower($reforma->user->worker->tratamiento)).'. '.ucwords(strtolower($reforma->user->worker->getFullName())));
+        $table->addCell(5000)->addText("Nombre: ".ucwords(strtolower($jefe_area->tratamiento)).'. '.ucwords(strtolower($jefe_area->nombres)).' '.ucwords(strtolower($jefe_area->apellidos)));
         $table->addRow();
-        $table->addCell(5000)->addText("Cargo:".$reforma->user->worker->cargo);
-        $table->addCell(5000)->addText("Cargo:".$jefe_area->cargo);
+        $table->addCell(5000)->addText("Cargo: ".ucwords(strtolower($reforma->user->worker->cargo)));
+        $table->addCell(5000)->addText("Cargo: ".ucwords(strtolower($jefe_area->cargo)));
 
 
         // Add footer

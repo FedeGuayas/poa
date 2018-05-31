@@ -55,7 +55,7 @@
 </p>
 
 <p class="detalle">
-    Mediante la presente se emite la CERTIFICIÓN DE DISPONIBILIDAD EN EL PLAN ANUAL DE CONTRATACIONES {{$fecha_actual->year}} para {{$cpac->pac->concepto}} DE LA FEDERACIÓN DEPORTIVA DEL GUAYAS, para lo cual se detalla:
+    Mediante la presente se emite la CERTIFICIÓN DE DISPONIBILIDAD EN EL PLAN ANUAL DE CONTRATACIONES {{$fecha_actual->year}} para {{$cpac->pac->concepto}}, para lo cual se detalla:
 </p>
 
     <table>

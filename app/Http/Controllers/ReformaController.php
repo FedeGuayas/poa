@@ -511,6 +511,7 @@ class ReformaController extends Controller
      */
     public function storePacsDestino(Request $request)
     {
+        $user_login=$request->user();
         try {
             DB::beginTransaction();
 
@@ -520,13 +521,21 @@ class ReformaController extends Controller
             $monto_reforma = $request->input('monto_reforma');
             $por_distribuir = $request->input('por_distribuir');
             $total_destino = $request->input('total_destino');
-            $justificativo = $request->input('justificativo_destino'); //arreglo justificativos para el informe tecnico de la reforma
+
             $pac_id = $request->input('pac_idd');//arreglo de los pac_id de destino
             $valor_dest = $request->input('subtotal_idd');//arreglo con los valores de pac de destino
 
             $reforma = Reforma::where('id', $request->input("reforma_id"))->with('pac_origen', 'reform_type', 'area_item', 'user')->first();
 
             $tipo_reforma = $reforma->reform_type->tipo_reforma;
+
+//            //Justificativo tienen las reformas que no sean internas
+//            if ($tipo_reforma!='INTERNA'){
+                $justificativo = $request->input('justificativo_destino'); //arreglo justificativos para el informe tecnico de la reforma
+//            }else{
+//                $justificativo =null;
+//            }
+
 
             //id poa de origen de la reforma
             $poa_origen_id = $reforma->area_item_id;
@@ -549,7 +558,7 @@ class ReformaController extends Controller
             $proceso_de_su_area = 'no';
             foreach ($pacs_origen as $po) {
                 //si el proceso de origen pertenece a un trabajador del area del analista
-                if (Auth::user()->worker->departamento->area_id == $po->pac->worker->departamento->area->id) {
+                if ($user_login->worker->departamento->area_id == $po->pac->worker->departamento->area->id) {
                     $proceso_de_su_area = 'si';
                     break;
                 }
@@ -572,16 +581,16 @@ class ReformaController extends Controller
 
                         $pac = Pac::where('id', $pac_id[$cont])->with('area_item')->first();//pac destino
 
-
                         if ($pac->area_item_id != $poa_origen_id) {
                             $message = 'En la reforma INTERNA solo se admiten como destino los items del mismo origen';
                             return response()->json(["message" => $message, "tipo" => 'error']);
                         }
 
-                        if (Auth::user()->id != $reforma->user_id || Auth::user()->worker_id != $pac->worker_id) {
-                            $message = 'En la reforma INTERNA solo se admiten items propios del usuario ';
-                            return response()->json(["message" => $message, "tipo" => 'error']);
-                        }
+                        //si el el usuario logeado no es el que inicio la reforma o el trabajador no es el dueño del proceso destino
+//                        if ($user_login->id != $reforma->user_id || $user_login->worker_id != $pac->worker_id) {
+//                            $message = 'En la reforma INTERNA solo se admiten items propios del usuario ';
+//                            return response()->json(["message" => $message, "tipo" => 'error']);
+//                        }
 
                         if ($pac->area_item->item->grupo_gasto == '51' || $pac->cod_item == '530606') {
                             $message = 'No se permiten reformas INTERNAS para el Grupo de Gasto 51 ni la partida 530606';
@@ -592,6 +601,7 @@ class ReformaController extends Controller
                         $pac_dest->reforma()->associate($reforma);
                         $pac_dest->pac_id = $pac_id[$cont];
                         $pac_dest->valor_dest = $valor_dest[$cont];
+                        $pac_dest->justificativo = null;
                         $pac_dest->save();
 
                         $cont++;
@@ -612,11 +622,15 @@ class ReformaController extends Controller
                         //sumar los valores al pac destino
                         $pac->presupuesto = $pac->presupuesto + $pac_dest->valor_dest;
                         $pac->disponible = $pac->disponible + $pac_dest->valor_dest; //el valor agregado en la reforma pasa a estar disponible
+
                         $pac->update();
 
                         $srpac = Srpac::where('pac_id', $pac_dest->pac_id)->get()->last(); //ultimo pdf de Srpac subido
-                        $srpac->status = Srpac::SRPAC_INACTIVA; //deshabilito el archivo de srpac para que se pueda generar nuevamente otro archivo
-                        $srpac->update();
+                        if (isset($srpac)) {
+                            $srpac->status = Srpac::SRPAC_INACTIVA; //deshabilito el archivo de srpac para que se pueda generar nuevamente otro archivo
+                            $srpac->update();
+                        }
+
                     }
 
                     //actualizar el monto del poafdg origen  (area_item), poa al que se le quitara saldo
@@ -636,8 +650,10 @@ class ReformaController extends Controller
                         $pac_orig->update();
 
                         $srpac = Srpac::where('pac_id', $pac_orig->pac_id)->get()->last(); //ultimo pdf de Srpac subido
-                        $srpac->status = Srpac::SRPAC_INACTIVA; //deshabilito el archivo de srpac para que se pueda generar nuevamente otro archivo
-                        $srpac->update();
+                        if (isset($srpac)) {
+                            $srpac->status = Srpac::SRPAC_INACTIVA; //deshabilito el archivo de srpac para que se pueda generar nuevamente otro archivo
+                            $srpac->update();
+                        }
                     }
 
                     $reforma->estado = Reforma::REFORMA_APROBADA;

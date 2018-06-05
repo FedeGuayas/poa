@@ -14,8 +14,10 @@
                 <td>
                     @permission('planifica-poa')
                     {{--Verificar condiciones para poder eliminra la inclusion--}}
-                    <a href="#!" class="btn-xs btn-danger delete tip" data-placement="top" title="Eliminar"
-                       data-id="{{$item->id}}"><i class="fa fa-trash-o"></i></a>
+                    @if ($item->inclusion==\App\AreaItem::INCLUSION_YES)
+                        <a href="#!" class="btn-xs btn-danger delete tip" data-placement="top" title="Eliminar"
+                           data-id="{{$item->id}}"><i class="fa fa-trash-o"></i></a>
+                    @endif
                     @endpermission
                 </td>
             </tr>

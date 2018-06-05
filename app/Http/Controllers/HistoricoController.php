@@ -573,15 +573,15 @@ class HistoricoController extends Controller
                     '(select area ingresoArea,extras.area_id,extras.item_id ingresoItemID,sum(extras.monto) ingresoExtra from extras 
                         inner join months m on m.cod=extras.mes
                         inner join areas a on a.id=extras.area_id
-                        group by extras.item_id,area_id) e'
+                        group by extras.item_id) e'
                 ), function ($join) {
                     $join->on('e.ingresoItemID', '=', 'i.id');
                 })
                 ->leftJoin(DB::raw(
-                    '(select area_item.item_id aiItemID, area_item.area_id aiAreaID,area_item.mes aiMes,sum(area_item.monto) aiMonto,a.area aiArea                          from area_item 
+                    '(select area_item.item_id aiItemID, area_item.area_id aiAreaID,area_item.mes aiMes,sum(area_item.monto) aiMonto,a.area aiArea from area_item 
                         inner join months m on m.cod=area_item.mes
                          inner join areas a on a.id=area_item.area_id
-                        group by area_item.item_id,area_item.area_id) ai'
+                        group by area_item.item_id) ai'
                 ), function ($join) {
                     $join->on('aiItemID', '=', 'i.id');
                 })
@@ -596,7 +596,7 @@ class HistoricoController extends Controller
                     $join->on('a.cod_actividad', '=', 'i.cod_actividad');
                     $join->on('a.cod_item', '=', 'i.cod_item');
                 })
-                ->select('eg.exercise_id', 'eg.cod_programa', 'eg.cod_actividad', 'eg.cod_item', 'i.id as itemID', 'i.item', 'i.presupuesto as itemPresupuesto', 'prog.programa', 'act.actividad', 'ingresoArea', 'ingresoItemID', DB::raw('IFNULL(ingresoExtra, 0) ingresoExtra'), 'aiItemID', 'ai.aiArea', 'ai.aiAreaID', DB::raw('IFNULL(aiMonto, 0) aiMonto'), 'a.Areas')
+                ->select('eg.exercise_id', 'eg.cod_programa', 'eg.cod_actividad', 'eg.cod_item', 'i.id as itemID', 'i.item', 'i.presupuesto as itemPresupuesto', 'prog.programa', 'act.actividad', 'ingresoArea', 'ingresoItemID', DB::raw('IFNULL(ingresoExtra, 0) ingresoExtra'), 'aiItemID', 'ai.aiArea', 'ai.aiAreaID', 'aiArea', DB::raw('IFNULL(aiMonto, 0) aiMonto'))
                 ->where('eg.exercise_id', $ejercicio)
                 //->where('i.id', 103) para comprobar los resultados devueltos
                 ->groupBy('cod_programa', 'cod_actividad', 'cod_item', 'item')
@@ -608,6 +608,7 @@ class HistoricoController extends Controller
             $area_item = AreaItem::from('area_item as ai')
                 ->leftjoin('items as i', 'i.id', '=', 'ai.item_id')
                 ->select('ai.item_id', 'ai.monto', 'ai.mes', 'ai.area_id')
+                ->where('inclusion',AreaItem::INCLUSION_NO)
                 ->get()->toArray();
 
             //historico guardado
@@ -805,7 +806,7 @@ class HistoricoController extends Controller
                 }
 
                 $hist_array[] = [
-                    'resp' => $hm->Areas,
+                    'resp' => $hm->aiArea,
                     'cod_prog' => $hm->cod_programa,
                     'cod_act' => $hm->cod_actividad,
                     'cod_it' => $hm->cod_item,

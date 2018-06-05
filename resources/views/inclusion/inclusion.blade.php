@@ -313,6 +313,8 @@
                     dataType: 'json',
                     data: data,
                     success: function (response) {
+                        console.log(response)
+
                         cod_item.val(response.cod_programa + '-' + response.cod_actividad + '-' + response.cod_item);
                         presupuesto.val(response.presupuesto);
                     },

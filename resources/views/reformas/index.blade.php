@@ -201,6 +201,7 @@
 
             var table = $("#reformas_table").DataTable({
                 lengthMenu: [[5, 10, -1], [5, 10, 'Todo']],
+                select:true,
                 "language": {
                     "decimal": "",
                     "emptyTable": "No se encontraron datos en la tabla",
@@ -223,6 +224,13 @@
                     "aria": {
                         "sortAscending": ": Activar para ordenar ascendentemente",
                         "sortDescending": ": Activar para ordenar descendentemente"
+                    },
+                    "select": {
+                        "rows": {
+                            "_": "Ha seleccionado %d filas",
+                            "0": "Click en una la fila para seleccionarla",
+                            "1": "Solo 1 fila seleccionada"
+                        }
                     }
                 },
                 "columnDefs": [
@@ -256,7 +264,6 @@
                                 });
 
                             column.data().unique().sort().each(function (d, j) {
-                                console.log(d);
                                 select.append('<option value="' + d + '">' + d + '</option>')
                             });
                         }

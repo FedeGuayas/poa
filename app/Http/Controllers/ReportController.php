@@ -606,7 +606,7 @@ class ReportController extends Controller
                 $reformasArray[] = [
                     'no1' => $cont,
                     'programa_o' => $r_pd->pac->area_item->item->actividad_programa->programa->programa,
-                    'cod_atividad' => $r_pd->pac->area_item->item->cod_actividad . ' ' . $r_pd->pac->area_item->item->actividad_programa->actividad->actividad,
+                    'cod_atividad' => $ref->area_item->item->cod_actividad . ' ' . $ref->area_item->item->actividad_programa->actividad->actividad,
                     'cod_item' => $r_pd->reforma->area_item->item->cod_item,
                     'item' => $r_pd->reforma->area_item->item->item,
                     'mes_o' => $r_pd->reforma->area_item->month->month,

@@ -99,7 +99,7 @@ class InclusionController extends Controller
     }
 
     /**
-     *  Cargar detalles de las inclusiones DEL POA repartido para esa area
+     *  Cargar detalles de las inclusiones DEL POA repartido para esa area al seleccionar el area
      * @param Request $request
      * @return mixed
      */
@@ -109,7 +109,7 @@ class InclusionController extends Controller
         $item_id = $request->input('item_id');
         $area_item = DB::table('area_item as ai')
             ->join('months as m', 'm.cod', '=', 'ai.mes')
-            ->select('ai.id', 'ai.item_id', 'ai.monto', 'ai.mes', 'ai.area_id', 'ai.item_id', 'm.month')
+            ->select('ai.id', 'ai.item_id', 'ai.monto', 'ai.mes', 'ai.area_id', 'ai.item_id','ai.inclusion', 'm.month')
             ->where('area_id', $area_id)
             ->where('item_id', $item_id)
             ->get();
@@ -119,6 +119,9 @@ class InclusionController extends Controller
 
     /**
      * Guardar inclusion poa del area en la tabla area_item como inclusion con monto $0
+     *
+     * Solo se permite hacer la inclusion de un item
+     *
      * @param Request $request
      * @return $this|\Illuminate\Http\RedirectResponse
      */
@@ -127,19 +130,32 @@ class InclusionController extends Controller
         try {
             DB::beginTransaction();
             $item = Item::where('id', $request->input('item'))->first();
+
+            //plainificacion o inclusion ya esxistente para ese item
+            $area_item_existentes=AreaItem::where('item_id',$item->id)->get();
+
             $areas = $request->input('area_id');
             $meses = $request->input('mes');
             $montos = $request->input('subtotal_id');
 
             $cont = 0;
             while ($cont < count($areas)) {
-                $item->areas()->attach($areas[$cont], ['monto' => $montos[$cont], 'mes' => $meses[$cont], 'inclusion' => AreaItem::INCLUSION_YES]);
-                $cont++;
-            }
 
-            DB::commit();
-            return redirect()->route('admin.inclusion')->with('message', 'Inclusión POA Guardada');
-        } catch (\Exception $e) {
+                //no permitir agregar una inclusion poa de un item que ya existe para un area y mes
+                foreach ($area_item_existentes as $ai) {
+                    if ( ($ai->area_id != $areas[$cont] ) || ($ai->area_id == $areas[$cont] && $ai->mes == $meses[$cont]) ) {
+                        return redirect()->route('admin.inclusion')->with('message_danger', 'Error! Ya existe una programación para el item seleccionado, puede hacer una inclusión del proceso sin necesidad de la inclusión POA');
+                    }
+                }
+
+
+                $item->areas()->attach($areas[$cont], ['monto' => $montos[$cont], 'mes' => $meses[$cont], 'inclusion' => AreaItem::INCLUSION_YES]);
+                    $cont++;
+                }
+
+                DB::commit();
+                return redirect()->route('admin.inclusion')->with('message', 'Inclusión POA Guardada');
+            } catch (\Exception $e) {
             DB::rollback();
             return redirect()->route('admin.inclusion')->with('message_danger', 'Error no se guardaron los registros en la BBDD');
 //                return redirect()->route('admin.inclusion')->with('message_danger',$e->getMessage());

@@ -139,8 +139,29 @@
                     "aria": {
                         "sortAscending":  ": Activar para ordenar ascendentemente",
                         "sortDescending": ": Activar para ordenar descendentemente"
+                    },
+                    "buttons": {
+                        "colvis": "Columnas",
+                        "copy": "Copiar",
+                        "print": "Imprimir"
                     }
-                }
+                },
+                dom: 'Blfrtip',
+                buttons: [
+                    {
+                        extend: 'excelHtml5',
+                        title: 'Gestión de compra',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+
+                    'colvis'
+                ],
+                columnDefs: [ {
+//                    targets: -1,
+                    visible: false
+                } ]
             });
 
             $("#gestion_table").fadeIn();

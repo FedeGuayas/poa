@@ -22,6 +22,7 @@ class PasswordController extends Controller
 
     use ResetsPasswords;
 
+    protected $subject = "Link Para Restablecer Contraseña";
     protected $redirectTo = '/';
 
     /**

@@ -146,7 +146,7 @@
         <div class="col-md-12">
             <div class="panel panel-success">
                 <div class="panel-heading clearfix">DETALLES POA
-                    <a href="#!" class="btn-collapse pull-right" data-toggle="collapse" data-target="#resumen"
+                    <a href="#" class="btn-collapse pull-right" data-toggle="collapse" data-target="#resumen"
                        aria-expanded="false" aria-controls="resumen"><i class="fa fa-minus"></i></a>
                 </div>
                 <div class="panel-body collapse in" id="resumen">

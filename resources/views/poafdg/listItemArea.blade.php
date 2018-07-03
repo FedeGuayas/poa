@@ -13,9 +13,9 @@
                 <td>$ {{number_format($item->monto,2,'.',' ')}}</td>
                 <td>
                     @permission('planifica-poa')
-                    <a href="#!" class="btn-xs btn-success tip" data-placement="top" title="Editar" data-toggle="modal"
+                    <a href="#" class="btn-xs btn-success tip" data-placement="top" title="Editar" data-toggle="modal"
                        data-target="#edit-plan" onclick="mostrarEdit({{$item->id}})"><i class="fa fa-pencil"></i></a>
-                    <a href="#!" class="btn-xs btn-danger delete tip" data-placement="top" title="Eliminar"
+                    <a href="#" class="btn-xs btn-danger delete tip" data-placement="top" title="Eliminar"
                        data-id="{{$item->id}}"><i class="fa fa-trash-o"></i></a>
                     @endpermission
                 </td>

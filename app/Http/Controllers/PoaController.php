@@ -297,7 +297,19 @@ class PoaController extends Controller
 
                 $cont = 0;
                 while ($cont < count($areas)) {
-                    $item->areas()->attach($areas[$cont], ['monto' => $montos[$cont], 'mes' => $meses[$cont]]);
+
+                    $planif_exist=AreaItem::where('item_id',$item->id)->first();
+
+                    //verifico si existe una planificacion para el item
+                    if (isset($planif_exist)){
+                        // verificar que sea en la misma area de lo contrario no permitirlo xk los items se pueden planidficar a una sola area
+                        if ($planif_exist->area_id != $areas[$cont]){
+                            return redirect()->route('poaFDG')->with('message_danger', 'No puede planificar un mismo item en varias áreas, en caso de ser un item compartido debe asignarlo a una área y en la planificación de los procesos los recursos serán asignados al responsable del área deseada');
+                        }
+                        $item->areas()->attach($areas[$cont], ['monto' => $montos[$cont], 'mes' => $meses[$cont]]);
+                    }else { //no existe planificacion, primera planificacion
+                        $item->areas()->attach($areas[$cont], ['monto' => $montos[$cont], 'mes' => $meses[$cont]]);
+                    }
                     $cont++;
                 }
 

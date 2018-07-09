@@ -12,7 +12,7 @@
             <div class="panel panel-info">
                 <div class="panel-heading clearfix">
                     EDITAR-PROCESO
-                    <a href="#!" class="btn-collapse pull-right" data-toggle="collapse" data-target="#poa-area"
+                    <a href="#" class="btn-collapse pull-right" data-toggle="collapse" data-target="#poa-area"
                        aria-expanded="false" aria-controls="poa-area"><i class="fa fa-minus"></i></a>
                 </div>
                 <div class="panel-body collapse in" id="poa-area">
@@ -82,7 +82,9 @@
                         <div class="col-lg-6">
                             <div class="form-group">
                                 {!! Form::label('concepto','Concepto:*') !!}
-                                {!! Form::textarea('concepto',null,['class'=>'form-control','placeholder'=>'Descripción del proceso...','rows'=>'3','style'=>'text-transform:uppercase','readonly']) !!}
+                                <textarea  name="concepto" id="concepto"  placeholder="Descripción del proceso..." rows="3" style="text-transform:uppercase;"  class="form-control" {{$pac->proceso_pac==\App\Pac::PROCESO_PAC ? 'readonly' : ''}}>{{$pac->concepto}}</textarea>
+{{--                                {!! Form::textarea('concepto',null,['class'=>'form-control','placeholder'=>'Descripción del proceso...','rows'=>'3','style'=>'text-transform:uppercase','readonly' ]) !!}--}}
+
                             </div>
                         </div>
                         <div class="col-lg-6">

@@ -77,9 +77,13 @@
             <tbody>
             @foreach($reformas as $reforma)
                 {{--Si el trabajador pertenece al area que se realizo la reforma y es analista o responsable-poa,
-                              o  es root o administrador, mostrarlo--}}
+                o es responsable poa y el que hizo la reforma peroe s de otra area (esto es para que cumpla los casos de las reformas de los recursos compartidos , que son asignadas a un area pero realizada por otra)
+                              o  es root o administrador,
+                              mostrarlo--}}
 
-                @if ( ( (Auth::user()->worker->departamento->area_id==$reforma->aiID && (Auth::user()->hasRole('analista') || Auth::user()->hasRole('responsable-poa'))) ) || (Auth::user()->hasRole('root') || Auth::user()->hasRole('administrador')))
+                @if ( ( (Auth::user()->worker->departamento->area_id==$reforma->aiID && (Auth::user()->hasRole('analista') || Auth::user()->hasRole('responsable-poa'))) ) ||
+                        (Auth::user()->id==$reforma->userID && (Auth::user()->hasRole('analista') || Auth::user()->hasRole('responsable-poa')) ) ||
+                        (Auth::user()->hasRole('root') || Auth::user()->hasRole('administrador')) )
                     <tr>
                         <td>{{$reforma->id}}</td>
                         <td>{{$reforma->area}}</td>
@@ -117,7 +121,7 @@
                                 {{--</a>--}}
                         {{--@endif--}}
                             @if(is_null($reforma->informe_id))
-                            <a href="#!">
+                            <a href="#">
                                 {!! Form::checkbox('select_informes[]',$reforma->id,false,['id'=>'I'.$reforma->id]) !!}
                                 {{--{!! Form::label($reforma->id, $reforma->id) !!}--}}
                             </a>
@@ -129,18 +133,18 @@
                         <td>
                             @permission('admin-reformas')
                             @if ($reforma->estado== \App\Reforma::REFORMA_PENDIENTE)
-                                <a href="#!" class="btn btn-xs btn-primary tip aprobar" data-placement="top"
+                                <a href="#" class="btn btn-xs btn-primary tip aprobar" data-placement="top"
                                    title="Aprobar"
                                    data-id="{{$reforma->id}}"><i
                                             class="fa fa-check-square-o" aria-hidden="true"></i>
                                 </a>
-                                <a href="#!" class="btn btn-xs btn-danger tip delete" data-placement="top"
+                                <a href="#" class="btn btn-xs btn-danger tip delete" data-placement="top"
                                    title="Cancelar"
                                    data-id="{{$reforma->id}}"><i class="fa fa-ban" aria-hidden="true"></i>
                                 </a>
                             @endif
                             @endpermission
-                            <a href="#!" class="btn btn-xs btn-info tip" data-placement="top" title="Detalle"
+                            <a href="#" class="btn btn-xs btn-info tip" data-placement="top" title="Detalle"
                                {{--data-toggle="modal" data-target="#show-modal" --}}
                                onclick="showDetalles({{$reforma->id}})"><i class="fa fa-eye"></i>
                             </a>
@@ -157,7 +161,7 @@
 
                         <td align="center">
                             @permission('imprimir-reformas')
-                            <a href="#!">
+                            <a href="#">
                                 {!! Form::checkbox('imp_reformas[]',$reforma->id,false,['id'=>'R'.$reforma->id]) !!}
                                 {{--{!! Form::label($reforma->id, $reforma->id) !!}--}}
                             </a>

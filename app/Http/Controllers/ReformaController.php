@@ -50,7 +50,7 @@ class ReformaController extends Controller
                 ->join('areas as a', 'a.id', '=', 'ai.area_id')
                 ->join('items as i', 'i.id', '=', 'ai.item_id')
                 ->join('pac_destino as pd', 'pd.reforma_id', '=', 'r.id')
-                ->select('r.id', 'r.estado', 'r.monto_orig','r.informe_id', 'rt.tipo_reforma', 'w.nombres', 'w.apellidos', 'm.month as mes', 'i.cod_programa', 'i.cod_actividad', 'i.cod_item', 'i.item', 'i.grupo_gasto', 'a.area', 'ai.area_id as aiID', DB::raw('sum(pd.valor_dest) as total_destino')
+                ->select('r.id', 'r.estado', 'r.monto_orig','r.informe_id', 'rt.tipo_reforma', 'w.nombres', 'w.apellidos', 'm.month as mes', 'i.cod_programa', 'i.cod_actividad', 'i.cod_item', 'i.item', 'i.grupo_gasto', 'a.area', 'ai.area_id as aiID','u.id as userID', DB::raw('sum(pd.valor_dest) as total_destino')
                 )
                 ->orderBy('r.id', 'desc')
                 ->groupBy('r.id', 'r.estado', 'r.monto_orig', 'w.nombres', 'w.apellidos', 'mes', 'i.cod_programa', 'i.cod_actividad', 'i.cod_item', 'i.item', 'i.grupo_gasto', 'a.area')

@@ -136,7 +136,7 @@
                                    class="btn btn-xs btn-success tip"
                                    data-placement="top" title="Editar"> <i class="fa fa-pencil"></i>
                                 </a>
-                                <a href="#!" class="btn btn-xs btn-danger delete tip" data-placement="top"
+                                <a href="#" class="btn btn-xs btn-danger delete tip" data-placement="top"
                                    title="Eliminar"
                                    data-id="{{$pac->id}}"><i class="fa fa-trash-o"></i>
                                 </a>

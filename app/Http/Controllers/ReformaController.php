@@ -522,6 +522,7 @@ class ReformaController extends Controller
             $por_distribuir = $request->input('por_distribuir');
             $total_destino = $request->input('total_destino');
 
+
             $pac_id = $request->input('pac_idd');//arreglo de los pac_id de destino
             $valor_dest = $request->input('subtotal_idd');//arreglo con los valores de pac de destino
 
@@ -535,7 +536,6 @@ class ReformaController extends Controller
 //            }else{
 //                $justificativo =null;
 //            }
-
 
             //id poa de origen de la reforma
             $poa_origen_id = $reforma->area_item_id;
@@ -611,18 +611,27 @@ class ReformaController extends Controller
 
                     //suma de todos los pac destino, puede ser mas de un poa
                     $monto_destino_total = PacDestino::where('reforma_id', $reforma->id)->sum('valor_dest');
+                    if ($reforma->monto_orig != $monto_destino_total) {
+                        $message = 'Los montos del origen ($' . $reforma->monto_orig . ') y destino ($' . $monto_destino_total . ') no coinciden.';
+                        return response()->json(["message" => $message, "tipo" => 'error']);
+                    }
 
                     //actualizar los montos de cada poafdg destino (area_item) y los pac
                     foreach ($reforma->pac_destino as $pac_dest) {
                         $pac = Pac::where('id', $pac_dest->pac_id)->first();
                         $poa_dest = $pac->area_item; //objeto, relacion belongsTo
                         $poa_dest->monto = $poa_dest->monto + $pac_dest->valor_dest;
+                        if ($poa_dest->inclusion == AreaItem::INCLUSION_YES) {
+                            $poa_dest->inclusion = AreaItem::INCLUSION_NO;
+                        }
                         $poa_dest->update();
 
                         //sumar los valores al pac destino
                         $pac->presupuesto = $pac->presupuesto + $pac_dest->valor_dest;
                         $pac->disponible = $pac->disponible + $pac_dest->valor_dest; //el valor agregado en la reforma pasa a estar disponible
-
+                        if ($pac->inclusion == Pac::PROCESO_INCLUSION_SI) {
+                            $pac->inclusion = Pac::PROCESO_INCLUSION_NO;
+                        }
                         $pac->update();
 
                         $srpac = Srpac::where('pac_id', $pac_dest->pac_id)->get()->last(); //ultimo pdf de Srpac subido
@@ -634,10 +643,8 @@ class ReformaController extends Controller
                     }
 
                     //actualizar el monto del poafdg origen  (area_item), poa al que se le quitara saldo
-                    $poaorigen = $reforma->area_item; // objeto, relacion belongsTo
-                    $poaorigen_actual = ($poaorigen->monto) - ($reforma->monto_orig);
-                    $poaorigen->monto = $poaorigen_actual;
-                    $poaorigen->update();
+                    //NO ES NECESARIO PORQUE EL MOVIMIENTO ES EN EL MISMO POA, NO HYA CAMBIO DE PRESUPUESTO DEL POA
+                    //......
 
                     //actualizar valores de pacs origen
                     foreach ($reforma->pac_origen as $pac_orig) {
@@ -658,11 +665,6 @@ class ReformaController extends Controller
 
                     $reforma->estado = Reforma::REFORMA_APROBADA;
                     $reforma->update();
-
-                    if ($reforma->monto_orig != $monto_destino_total) {
-                        $message = 'Los montos del origen ($' . $reforma->monto_orig . ') y destino ($' . $monto_destino_total . ') no coinciden.';
-                        return response()->json(["message" => $message, "tipo" => 'error']);
-                    }
 
                     break;
 
@@ -734,7 +736,7 @@ class ReformaController extends Controller
                     $pac_destino = PacDestino::with('pac')->where('reforma_id', $reforma->id)->first(); //para buscar poa destino
 
                     //$pdf = PDF::loadView('reformas.informeT-pdf', compact('reforma', 'jefe_area', 'fecha_actual', 'month', 'pac_destino'))->stream();
-
+                    $this->sendInfoReformaMail($reforma);
                     break;
 
                 case 'MINISTERIAL':
@@ -742,7 +744,7 @@ class ReformaController extends Controller
                     if ( ( (Auth::user()->worker->departamento->area_id == $area_id_origen || $proceso_de_su_area=='si') && Auth::user()->hasRole('analista') ) || (Auth::user()->hasRole('root') || Auth::user()->hasRole('administrador'))) {
                         $autorizado = true;
                     } else {
-                        $message = 'NO tiene permisos para realizar la reforma informativa';
+                        $message = 'NO tiene permisos para realizar la reforma ministerial';
                         return response()->json(["message" => $message, "tipo" => 'error']);
                     }
 
@@ -809,8 +811,10 @@ class ReformaController extends Controller
                     $pac_destino = PacDestino::with('pac')->where('reforma_id', $reforma->id)->first(); //para buscar poa destino
 
                    // $pdf = PDF::loadView('reformas.informeT-pdf', compact('reforma', 'jefe_area', 'fecha_actual', 'month', 'pac_destino'))->stream();
-
+                        //enviar informe tecnico por correo
 //                    $this->sendInfoTecReformaMail($reforma, $pdf);
+                    //notificar de creacion de reforma
+                    $this->sendInfoReformaMail($reforma);
 
                     break;
             }
@@ -904,18 +908,20 @@ class ReformaController extends Controller
      */
     public function confirm(Request $request, $id)
     {
+        try {
 
-        $reforma = Reforma::findOrFail($id);
+            DB::beginTransaction();
 
-        $poaorigen = AreaItem::where('id', $reforma->area_item_id)->first();//poa al que se le quitara saldo
-
-        $monto_destino_total = PacDestino::where('reforma_id', $reforma->id)->sum('valor_dest'); //suma de todos los pac destino, puede ser mas de un poa (area_item)
+            $reforma = Reforma::with('area_item','user','reform_type','pac_origen','pac_destino')->where('id', $id)->first();
 
         //actualizar los montos de cada poafdg destino (area_item) y los pac_destino
         foreach ($reforma->pac_destino as $pac_dest) {
             $pac = Pac::where('id', $pac_dest->pac_id)->first();
             $poa_dest = $pac->area_item;
             $poa_dest->monto = $poa_dest->monto + $pac_dest->valor_dest;
+            if ($poa_dest->inclusion == AreaItem::INCLUSION_YES) {
+                $poa_dest->inclusion = AreaItem::INCLUSION_NO;
+            }
             $poa_dest->update();
 
             $srpac = Srpac::with('srpac_destino')->where('pac_id', $pac_dest->pac_id)->get()->last(); //ultimo pdf de Srpac subido
@@ -936,15 +942,14 @@ class ReformaController extends Controller
             $pac->update();
         }
 
-        //actualizar el monto del poafdg origen  (area_item), poa al que se le quitara saldo
-        $poaorigen = $reforma->area_item;
-        $poaorigen_actual = ($poaorigen->monto) - ($reforma->monto_orig);
-        $poaorigen->monto = $poaorigen_actual;
-        $poaorigen->update();
 
         //actualizar valores de pacs origen
         foreach ($reforma->pac_origen as $pac_orig) {
             $pac = Pac::where('id', $pac_orig->pac_id)->first();
+
+            $area_item_origen = $pac->area_item;
+            $area_item_origen->monto = $area_item_origen->monto - $pac_orig->valor_orig;
+            $area_item_origen->update();
 
             $srpac = Srpac::with('srpac_destino')->where('pac_id', $pac_orig->pac_id)->get()->last(); //ultimo pdf de Srpac subido
             if (count($srpac) > 0) {
@@ -963,19 +968,23 @@ class ReformaController extends Controller
         $reforma->estado = Reforma::REFORMA_APROBADA;
         $reforma->update();
 
-        if ($reforma->monto_orig != $monto_destino_total) {
-            $message = 'Los montos del origen ($' . $reforma->monto_orig . ') y destino ($' . $monto_destino_total . ') no coinciden.';
-            return response()->json(["message" => $message, "tipo" => 'error']);
-        }
-
         $accion = 'aprobada';
         $this->sendReformaStatusMail($reforma, $accion);
+
+            DB::commit();
 
         $message = "Reforma aprobada";
         if ($request->ajax()) {
             return response()->json(["message" => $message]);
         }
         return redirect()->route('admin.reformas.index');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+//            $message=$e->getMessage();
+            $message = 'Ocurrio un error en la bbdd al aprobar la reforma,';
+            return response()->json(["message" => $message, "tipo" => "error"]);
+        }
     }
 
 
@@ -1005,34 +1014,63 @@ class ReformaController extends Controller
     }
 
 
+//    /**
+// * Correo de notificacion del informe técnico de reforma enviado a Blanca Silva y al usuario que solicita la reforma
+// * @param $user
+// * @param $pass
+// */
+//    public function sendInfoTecReformaMail($reforma, $pdf)
+//    {
+//        $user_to = 'blanca.silva@fedeguayas.com.ec';
+//        $user_sol = $reforma->user->email; //usuario que solicita la reforma
+//        $data = [];
+//
+//        Mail::send('emails.informe_tecnico_reforma', [$data], function ($message) use ($user_to, $user_sol, $pdf) {
+//
+//            $message->from('admin@fedeguayas.com.ec', 'Sistema Gestión del POA');
+//            $message->subject('Informe Técnico de Reforma');
+//            $message->cc($user_sol);
+//            $message->to($user_to);
+//            $message->attachData($pdf, 'informe_reforma.pdf', ['mime' => 'application/pdf']);
+//
+//        });
+//
+//        if (Mail::failures()) {
+//            $message = 'Ocurrio un error al enviar el informe técnico';
+//            return response()->json(["message" => $message, "tipo" => 'error']);
+////            return back()->with(['message_danger' => 'Ocurrio un error al enviar el informe técnico']);
+//
+//        }
+//    }
+
     /**
-     * Correo de notificacion del informe técnico de reforma enviado a Blanca Silva y al usuario que solicita la reforma
+     * Correo de notificacion de la creacion de reforma
      * @param $user
      * @param $pass
      */
-    public function sendInfoTecReformaMail($reforma, $pdf)
+    public function sendInfoReformaMail($reforma)
     {
-        $user_to = 'blanca.silva@fedeguayas.com.ec';
-        $user_sol = $reforma->user->email; //usuario que solicita la reforma
-        $data = [];
+        $user_to = 'pamela.alcivar@fedeguayas.com.ec';
+//        $user_sol = $reforma->user->email; //usuario que solicita la reforma
 
-        Mail::send('emails.informe_tecnico_reforma', [$data], function ($message) use ($user_to, $user_sol, $pdf) {
+        Mail::send('emails.new_reforma', ['reforma'=>$reforma], function ($message) use ($user_to) {
 
             $message->from('admin@fedeguayas.com.ec', 'Sistema Gestión del POA');
-            $message->subject('Informe Técnico de Reforma');
-            $message->cc($user_sol);
+            $message->cc(['blanca.silva@fedeguayas.com.ec','rosae.rada@fedeguayas.com.ec']);
+            $message->subject('Nueva Reforma');
             $message->to($user_to);
-            $message->attachData($pdf, 'informe_reforma.pdf', ['mime' => 'application/pdf']);
+
 
         });
 
         if (Mail::failures()) {
-            $message = 'Ocurrio un error al enviar el informe técnico';
+            $message = 'Ocurrio un error al enviar la solicitud de reforma';
             return response()->json(["message" => $message, "tipo" => 'error']);
 //            return back()->with(['message_danger' => 'Ocurrio un error al enviar el informe técnico']);
 
         }
     }
+
 
     /**
      * Correo de notificacion de estado de la reforma, aprobada o cancelada, enviado al usuario que solicito la reforma

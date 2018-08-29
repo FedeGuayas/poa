@@ -161,10 +161,10 @@
 
                         <td align="center">
                             @permission('imprimir-reformas')
-                            <a href="#">
-                                {!! Form::checkbox('imp_reformas[]',$reforma->id,false,['id'=>'R'.$reforma->id]) !!}
-                                {{--{!! Form::label($reforma->id, $reforma->id) !!}--}}
-                            </a>
+                                <a href="#">
+                                    {!! Form::checkbox('imp_reformas[]',$reforma->id,false,['id'=>'R'.$reforma->id]) !!}
+                                    {{--{!! Form::label($reforma->id, $reforma->id) !!}--}}
+                                </a>
                             @endpermission
                         </td>
                     </tr>

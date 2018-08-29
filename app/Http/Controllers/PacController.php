@@ -541,7 +541,7 @@ class PacController extends Controller
                 if (count($jefe_area) > 0) {
                     $correo_para[] = $jefe_area->email;
                 }
-
+                $correo_para = array_unique($correo_para);
             } else {
                 return back()->withInput()->with('message_danger', 'Existe un error en el area asignada al usuario que inicio sección. Contacte al administrador del sistema');
             }

@@ -1056,7 +1056,7 @@ class ReformaController extends Controller
         Mail::send('emails.new_reforma', ['reforma'=>$reforma], function ($message) use ($user_to) {
 
             $message->from('admin@fedeguayas.com.ec', 'Sistema Gestión del POA');
-            $message->cc(['blanca.silva@fedeguayas.com.ec','rosae.rada@fedeguayas.com.ec']);
+            $message->cc(['blanca.silva@fedeguayas.com.ec','rosaedith.rada@fedeguayas.com.ec']);
             $message->subject('Nueva Reforma');
             $message->to($user_to);
 

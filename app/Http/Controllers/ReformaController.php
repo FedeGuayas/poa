@@ -620,7 +620,7 @@ class ReformaController extends Controller
                     foreach ($reforma->pac_destino as $pac_dest) {
                         $pac = Pac::where('id', $pac_dest->pac_id)->first();
                         $poa_dest = $pac->area_item; //objeto, relacion belongsTo
-                        $poa_dest->monto = $poa_dest->monto + $pac_dest->valor_dest;
+                       // $poa_dest->monto = $poa_dest->monto + $pac_dest->valor_dest;//en la reforma interna no se afecta el poa
                         if ($poa_dest->inclusion == AreaItem::INCLUSION_YES) {
                             $poa_dest->inclusion = AreaItem::INCLUSION_NO;
                         }

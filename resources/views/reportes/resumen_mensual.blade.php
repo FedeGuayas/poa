@@ -52,21 +52,29 @@
                                     $ {{number_format(($res->planificado-($res->devengado-$res->extra)),2,'.',' ')}}
                                 </td>
                                 <td>
-                                    {{--@if ($res->devengado/$res->total*100 <=60)--}}
-                                    @if (($res->devengado-$res->extra)/($res->planificado)*100 <=60)
-                                        <span class="label la-2x label-danger">{{number_format(($res->devengado-$res->extra)/($res->planificado)*100,2,'.',' ')}}
-                                            %</span>
-                                    @elseif(($res->devengado-$res->extra)/($res->planificado)*100 <=90 )
-                                        <span class="label la-2x label-warning">{{number_format(($res->devengado-$res->extra)/($res->planificado)*100,2,'.',' ')}}
-                                            %</span>
+                                    @if ($res->planificado > 0 )
+                                        {{--@if ($res->devengado/$res->total*100 <=60)--}}
+                                        @if (($res->devengado-$res->extra)/($res->planificado)*100 <=60)
+                                            <span class="label la-2x label-danger">{{number_format(($res->devengado-$res->extra)/($res->planificado)*100,2,'.',' ')}}
+                                                %</span>
+                                        @elseif(($res->devengado-$res->extra)/($res->planificado)*100 <=90 )
+                                            <span class="label la-2x label-warning">{{number_format(($res->devengado-$res->extra)/($res->planificado)*100,2,'.',' ')}}
+                                                %</span>
+                                        @else
+                                            <span class="label la-2x label-success">{{number_format(($res->devengado-$res->extra)/($res->planificado)*100,2,'.',' ')}}
+                                                %</span>
+                                        @endif
                                     @else
-                                        <span class="label la-2x label-success">{{number_format(($res->devengado-$res->extra)/($res->planificado)*100,2,'.',' ')}}
-                                            %</span>
+                                        <span class="label la-2x label-danger">Sin Planificado</span>
                                     @endif
                                 </td>
                                 <td>
-                                    {{number_format(100-(($res->devengado-$res->extra)/($res->planificado)*100),2,'.','')}}
-                                    %
+                                    @if ($res->planificado > 0 )
+                                        {{number_format(100-(($res->devengado-$res->extra)/($res->planificado)*100),2,'.','')}}
+                                        %
+                                    @else
+                                        <span class="label la-2x label-danger">Sin Planificado</span>
+                                    @endif
                                 </td>
                                 {{--<td>{{$res->extra}}</td>--}}
                             </tr>

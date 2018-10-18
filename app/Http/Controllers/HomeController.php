@@ -59,12 +59,19 @@ class HomeController extends Controller
             ->where('ai.mes', '=', $mes)
             ->get();
 
+
+
         $resumenArray=[];
         foreach ($resumen as $r){
+            $val=0;
+            if ($r->planificado > 0 ){
+                $val=($r->devengado-$r->extra)/$r->planificado;
+            }
+
             $resumenArray[] = [
                 'labels' => $r->area,
-                'eje' => round(($r->devengado-$r->extra)/($r->planificado)*100,2),
-                'no_eje'=>round(100-(($r->devengado-$r->extra)/($r->planificado)*100),2),
+                'eje' => round(($val)*100,2),
+                'no_eje'=>round(100-(($val)*100),2),
             ];
         }
 

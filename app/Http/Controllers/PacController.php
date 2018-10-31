@@ -816,4 +816,36 @@ class PacController extends Controller
     }
 
 
+    public function generateAutomaticProcess(Request $request){
+
+
+        $area_items_id = $request->input('gen_proc');//arreglo con los id de los area_item
+
+        if (empty($area_items_id) || !isset($area_items_id)) {
+            return redirect()->back()->with('message_danger', 'Debe seleccionar al menos un item para poder generar el informe');
+        }
+
+//        dd($area_items_id);
+
+//        $area_item = DB::table('area_item as ai')
+//            ->join('items as i', 'ai.item_id', '=', 'i.id')
+//            ->join('areas as a', 'a.id', '=', 'ai.area_id')
+//            ->join('months as m', 'm.cod', '=', 'ai.mes')
+//            ->leftJoin('pacs as p', 'p.area_item_id', '=', 'ai.id')
+//            ->select('ai.id', 'i.cod_item', 'ai.inclusion', 'i.cod_programa', 'i.cod_actividad', 'i.item', 'ai.monto', 'm.month as mes', 'a.area', DB::raw('sum(p.presupuesto) as distribuido'))
+//            ->groupBy('ai.id', 'i.cod_item', 'i.cod_programa', 'i.cod_actividad', 'i.item', 'ai.monto', 'mes', 'a.area')
+//            ->where('area_id', 'like', '%' . $area_select . '%')
+//            ->where('ai.inclusion', '=', AreaItem::INCLUSION_NO)//mostrar los poas que no sean una inclusion
+//            ->get();
+
+        $area_items = AreaItem::from('area_item as ai')
+//            ->with('pac_origen', 'pac_destino', 'area_item', 'user', 'reform_type')
+            ->whereIn('ai.id', $area_items_id)
+//            ->orderBy('r.id', 'desc')
+            ->get();
+
+dd($area_items);
+    }
+
+
 }

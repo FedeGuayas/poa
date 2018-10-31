@@ -25,6 +25,7 @@
             </div>
             <div class="panel-body collapse in" id="poa-area">
                 <div class="col-lg-12">
+                    {!! Form::open(['route'=>'pacs.generateAutomaticProcess','method'=>'post','id'=>'imp_reformas_select']) !!}
                     <div class="table-responsive">
                         <table class="table table-striped table-bordered table-condensed table-hover" id="ai_table"
                                cellspacing="0" width="100%" style="display: none;">
@@ -36,7 +37,15 @@
                             <th style="width: 150px;">Plan</th>
                             <th style="width: 150px;">Disp.</th>
                             <th style="width: 100px;">Mes</th>
-                            <th>Acción</th>
+                            <th></th>
+                            <th style="width: 45px;">
+                                {{--Check de seleccionar todos los check para generar procesos automaticamente--}}
+                                {!! Form::checkbox('select_all_items',null,false,['id'=>'select_all_items','class'=>'checkbox tip','data-placement'=>'top', 'title'=>'Seleccionar todo']) !!}
+                                {{--Crear Procesos Automaticamente con los item seleccionados y sus valores disponibles--}}
+                                @permission('planifica-pac')
+                                {!! Form::button('<i class="fa fa-check-square-o" aria-hidden="true"></i>',['class'=>'btn-xs btn-info tip','data-placement'=>'top', 'title'=>'Procesos Auto.','type'=>'submit']) !!}
+                                @endpermission
+                            </th>
                             </thead>
                             <tfoot>
                             <tr>
@@ -47,6 +56,7 @@
                                 <th></th>
                                 <th class="search-filter">filtrar</th>
                                 <th></th>
+                               <th></th>
                             </tr>
                             </tfoot>
                             <tbody>
@@ -58,26 +68,37 @@
                                     <td>${{$ai->monto}}</td>
                                     <td>${{($ai->monto-$ai->distribuido)}}</td>
                                     <td>{{$ai->mes}}</td>
+                                    {{--Si el usuario pertenece al area a la que se repartio el dinero o es root y Si hay disponibilidad de ese poa --}}
+                                    @if ( (Auth::user()->worker->departamento->area->area==$ai->area || Auth::user()->hasRole('root')) && ($ai->monto-$ai->distribuido)>0)
+                                    @permission('planifica-pac')
                                     <td>
-                                        @permission('planifica-pac')
-                                        {{--Si el usuario pertenece al area a la que se repartio el dinero o es root y Si hay disponibilidad de ese poa --}}
-                                        @if ( (Auth::user()->worker->departamento->area->area==$ai->area || Auth::user()->hasRole('root')) && ($ai->monto-$ai->distribuido)>0)
-                                            {{--Si no es una inclusion--}}
+                                        {{--Si no es una inclusion--}}
                                             @if ($ai->inclusion==\App\AreaItem::INCLUSION_NO)
                                                 <a href="{{route('createPac',$ai->id)}}"
                                                    class="btn btn-xs btn-success tip"
                                                    data-placement="top" title="Crear Proceso">
-                                                    <i class="fa fa-2x fa-money"></i>
+                                                    <i class="fa fa-money"></i>
                                                 </a>
                                             @endif
-                                        @endif
-                                        @endpermission
                                     </td>
+                                    <td align="center">
+
+                                        <a href="#">
+                                            {!! Form::checkbox('gen_proc[]',$ai->id,false,['id'=>'ai'.$ai->id]) !!}
+                                        </a>
+
+                                    </td>
+                                    @endpermission
+                                    @else
+                                        <td></td>
+                                        <td></td>
+                                    @endif
                                 </tr>
                             @endforeach
                             </tbody>
                         </table>
                     </div>
+                    {!! Form::close() !!}
                 </div>
             </div>{{--./panel-collapse--}}
         </div>{{--./panel-info--}}
@@ -86,7 +107,7 @@
     <div class="col-md-12">
         <div class="panel panel-success">
             <div class="panel-heading clearfix">Procesos - {{count($area)>0 ? $area->area : ""}}
-                <a href="#!" class="btn-collapse pull-right" data-toggle="collapse" data-target="#resumen"
+                <a href="#" class="btn-collapse pull-right" data-toggle="collapse" data-target="#resumen"
                    aria-expanded="false" aria-controls="resumen"><i class="fa fa-minus"></i></a>
             </div>
             <div class="panel-body collapse in" id="resumen">
@@ -195,6 +216,9 @@
                         "sortDescending": ": Activar para ordenar descendentemente"
                     }
                 },
+                "columnDefs": [
+                    { "orderable": false, "targets": [6,7] }
+                ],
                 "footerCallback": function (row, data, start, end, display) {
                     var api = this.api(), data;
 
@@ -359,6 +383,11 @@
             });
 
 
+        });
+
+        //seleccionar todos los check para informe
+        $(document).on('change', '#select_all_items', function (event) {
+            $("input[name='gen_proc[]']").prop('checked', $(this).prop("checked"));
         });
 
         $(document).on('mouseover', '.tip', function (event) {

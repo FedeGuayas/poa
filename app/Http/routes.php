@@ -59,6 +59,8 @@ Route::group(['prefix' => 'admin','middleware'=>'auth'], function () {
     Route::get('pacs/areas',['uses'=>'PacController@indexPlanificacion', 'as'=>'indexPlanificacion']);
     Route::get('pacs/gestion{id}',['uses'=>'PacController@confirmarDevengado', 'as'=>'confirmarDevengado']);
     Route::get('pacs/pdf/{data?}',['uses'=>'PacController@pacsPDF', 'as'=>'admin.pacs.pac-pdf']);
+    //generar procesos automaticamente
+    Route::post('pacs/generate-process',['uses'=>'PacController@generateAutomaticProcess', 'as'=>'pacs.generateAutomaticProcess']);
 
     //Vista planificacion para agregar inclusion Pac o No Pac
     Route::get('pacs/inclusion/areas',['uses'=>'InclusionController@indexIncPac', 'as'=>'indexIncPac']);
@@ -67,6 +69,7 @@ Route::group(['prefix' => 'admin','middleware'=>'auth'], function () {
     Route::get('pac/inclusion/{id}/edit',['uses'=>'InclusionController@incPacEdit', 'as'=>'editIncPac']);
     Route::put('pac/inclusion/{id}/update',['uses'=>'InclusionController@incPacUpdate', 'as'=>'updateIncPac']);
     Route::delete('pacs/inclusion/{id}/destroy',['uses'=>'InclusionController@destroyInclusionPac', 'as'=>'destroyInclusionPac']);
+
 
     //vista para generar el pdf de la Solicitud de Inclusion PAC
     Route::get('pacs/inclusion_pac/create',['uses'=>'InclusionController@createIPAC', 'as'=>'create.inclusion-pac']);

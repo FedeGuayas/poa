@@ -120,6 +120,7 @@
                             <th>Ejecutado</th>
                             <th>Devengado</th>
                             <th>Disponible</th>
+                            <th>Liberado</th>
                             <th>Responsable</th>
                             <th>Procedimiento</th>
                             <th>Concepto</th>
@@ -130,6 +131,7 @@
                             <th class="search-filter">filtrar</th>
                             <th class="search-filter">filtrar</th>
                             <th class="search-filter">filtrar</th>
+                            <th></th>
                             <th></th>
                             <th></th>
                             <th></th>
@@ -153,6 +155,7 @@
                                     <td>$ {{number_format($pacs->comprometido,2,'.','')}}</td>
                                     <td>$ {{number_format($pacs->devengado,2,'.','')}}</td>
                                     <td>$ {{number_format($pacs->disponible,2,'.','')}}</td>
+                                    <td>$ {{number_format($pacs->liberado,2,'.','')}}</td>
                                     <td>{{$pacs->nombres}} {{$pacs->apellidos}}</td>
                                     <td>{{$pacs->procedimiento}}</td>
                                     <td>{{$pacs->concepto}}</td>
@@ -384,6 +387,9 @@
                     total_disponible = api.column(6).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
+                    total_liberado = api.column(7).data().reduce(function (a, b) {
+                        return (intVal(a) + intVal(b)).toFixed(2);
+                    }, 0);
 
 
                     // Total en la pagina actual
@@ -399,12 +405,16 @@
                     pageTotal_disp = api.column(6, {page: 'current'}).data().reduce(function (a, b) {
                         return (intVal(a) + intVal(b)).toFixed(2);
                     }, 0);
+                    pageTotal_lib = api.column(7, {page: 'current'}).data().reduce(function (a, b) {
+                        return (intVal(a) + intVal(b)).toFixed(2);
+                    }, 0);
 
                     // actualzar total en el pie de tabla
                     $(api.column(3).footer()).html('$' + pageTotal_pre + '<p style="color: #0c199c">' + ' ( $' + total_presupuesto + ' )' + '</p>');
                     $(api.column(4).footer()).html('$' + pageTotal_eje + '<p style="color: #0c199c">' + ' ( $' + total_ejecutado + ' )' + '</p>');
                     $(api.column(5).footer()).html('$' + pageTotal_dev + '<p style="color: #0c199c">' + ' ( $' + total_devengado + ' )' + '</p>');
                     $(api.column(6).footer()).html('$' + pageTotal_disp + '<p style="color: #0c199c">' + ' ( $' + total_disponible + ' )' + '</p>');
+                    $(api.column(7).footer()).html('$' + pageTotal_lib + '<p style="color: #0c199c">' + ' ( $' + total_liberado + ' )' + '</p>');
                 },
                 dom: 'Blfrtip',
                 buttons: [

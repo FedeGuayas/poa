@@ -95,7 +95,7 @@ class ReportController extends Controller
                 ->join('areas as a', 'a.id', '=', 'ai.area_id')
                 ->join('workers as w', 'w.id', '=', 'p.worker_id')
                 ->join('departamentos as d', 'd.id', '=', 'w.departamento_id')
-                ->select('p.id', 'i.cod_item', 'i.cod_programa', 'i.cod_actividad', 'i.item', 'p.mes', 'p.presupuesto', 'p.disponible', 'p.comprometido', 'p.devengado', 'w.nombres', 'w.apellidos', 'a.area', 'p.procedimiento', 'p.concepto', 'd.area_id as area_trabajador')
+                ->select('p.id', 'i.cod_item', 'i.cod_programa', 'i.cod_actividad', 'i.item', 'p.mes', 'p.presupuesto', 'p.disponible', 'p.comprometido', 'p.devengado','p.liberado', 'w.nombres', 'w.apellidos', 'a.area', 'p.procedimiento', 'p.concepto', 'd.area_id as area_trabajador')
 //            ->where('ai.mes', 'like', '%' . $mes . '%')
                 ->where('ai.mes', '=', $mes_cod)
                 ->get();

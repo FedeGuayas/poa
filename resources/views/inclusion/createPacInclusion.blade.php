@@ -61,7 +61,7 @@
                         </div>
                         <div class="col-lg-2">
                             <div class="form-group">
-                                {!! Form::select('tipo_compra',['BIEN'=>'BIEN','OBRA'=>'OBRA','SERVICIO'=>'SERVICIO','CONSULTORIA'=>'CONSULTORIA'],null,['class'=>'form-control selectpicker','placeholder'=>'Tipo Compra ... *','id'=>'tipo_compra','required']) !!}
+                                {!! Form::select('tipo_compra',['BIEN'=>'BIEN','OBRA'=>'OBRA','SERVICIO'=>'SERVICIO','CONSULTORIA'=>'CONSULTORIA','OTRO'=>'OTRO'],null,['class'=>'form-control selectpicker','placeholder'=>'Tipo Compra ... *','id'=>'tipo_compra','required']) !!}
                             </div>
                         </div>
 

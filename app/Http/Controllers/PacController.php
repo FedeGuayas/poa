@@ -356,7 +356,7 @@ class PacController extends Controller
             $presupuesto_nuevo = $request->input('presupuesto');
             $total_disponible = $request->input('total_disponible');
 
-            if ($pac->tipo_compra != strtoupper($request->input('tipo_compra'))){
+            if ($pac->tipo_compra != strtoupper($request->input('tipo_compra'))) {
                 return back()->with('message_danger', 'El tipo de compra solo puede ser cambiado mediante reforma');
             }
 
@@ -406,14 +406,14 @@ class PacController extends Controller
 
                 $pac = Pac::findOrFail($id);
 
-                $reforma_origen=PacOrigen::where('pac_id',$pac->id)->first();
-                $reforma_destino=PacDestino::where('pac_id',$pac->id)->first();
-                $gestion=Detalle::where('pac_id',$pac->id)->first();
+                $reforma_origen = PacOrigen::where('pac_id', $pac->id)->first();
+                $reforma_destino = PacDestino::where('pac_id', $pac->id)->first();
+                $gestion = Detalle::where('pac_id', $pac->id)->first();
 
                 //si el proceso es una inclusion o  esta en alguna reforma o alguna gestion, no eliminar
-                if ($pac->inclusion===Pac::PROCESO_INCLUSION_SI || $reforma_origen || $reforma_destino || $gestion){
+                if ($pac->inclusion === Pac::PROCESO_INCLUSION_SI || $reforma_origen || $reforma_destino || $gestion) {
                     $message = 'El proceso no puede ser eliminado porque o es una inclusión, o se encuentra asociado a una reforma o gestion';
-                    return response()->json(['message' => $message,'tipo'=>'error']);
+                    return response()->json(['message' => $message, 'tipo' => 'error']);
                 }
 
                 $pac->delete();
@@ -793,8 +793,7 @@ class PacController extends Controller
      * @param $user
      * @param $pass
      */
-    public
-    function sendCpresupUploadFileMail($pac, $cpresup)
+    public function sendCpresupUploadFileMail($pac, $cpresup)
     {
         $user_to = $pac->worker->email; //responsable del pac
         $path = public_path() . '/uploads/pac/certifications/presupuestaria/' . $cpresup->cert_presup;
@@ -815,36 +814,80 @@ class PacController extends Controller
         }
     }
 
+    /**
+     * Generar procesos automaticos en la planificacion de procesos con el monto disponible general
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function generateAutomaticProcess(Request $request)
+    {
 
-    public function generateAutomaticProcess(Request $request){
+        //        if ($user_login->can('planifica-pac')) {
+//
+//        } else return abort(403);
 
 
         $area_items_id = $request->input('gen_proc');//arreglo con los id de los area_item
 
         if (empty($area_items_id) || !isset($area_items_id)) {
-            return redirect()->back()->with('message_danger', 'Debe seleccionar al menos un item para poder generar el informe');
+            return redirect()->back()->with('message_danger', 'Debe seleccionar al menos un item para poder generar el proceso automático');
         }
 
-//        dd($area_items_id);
-
-//        $area_item = DB::table('area_item as ai')
-//            ->join('items as i', 'ai.item_id', '=', 'i.id')
-//            ->join('areas as a', 'a.id', '=', 'ai.area_id')
-//            ->join('months as m', 'm.cod', '=', 'ai.mes')
-//            ->leftJoin('pacs as p', 'p.area_item_id', '=', 'ai.id')
-//            ->select('ai.id', 'i.cod_item', 'ai.inclusion', 'i.cod_programa', 'i.cod_actividad', 'i.item', 'ai.monto', 'm.month as mes', 'a.area', DB::raw('sum(p.presupuesto) as distribuido'))
-//            ->groupBy('ai.id', 'i.cod_item', 'i.cod_programa', 'i.cod_actividad', 'i.item', 'ai.monto', 'mes', 'a.area')
-//            ->where('area_id', 'like', '%' . $area_select . '%')
-//            ->where('ai.inclusion', '=', AreaItem::INCLUSION_NO)//mostrar los poas que no sean una inclusion
+        //conjunto de areas_items
+//        $area_items = AreaItem::from('area_item as ai')
+//            ->with('pacs', 'item', 'area', 'month')
+//            ->whereIn('ai.id', $area_items_id)
+////            ->orderBy('r.id', 'desc')
 //            ->get();
 
-        $area_items = AreaItem::from('area_item as ai')
-//            ->with('pac_origen', 'pac_destino', 'area_item', 'user', 'reform_type')
-            ->whereIn('ai.id', $area_items_id)
-//            ->orderBy('r.id', 'desc')
-            ->get();
 
-dd($area_items);
+        $cont = 0;
+        while ($cont < count($area_items_id)) {
+
+            try {
+                DB:: beginTransaction();
+
+                $area_item = AreaItem::from('area_item as ai')
+                    ->with('pacs', 'item', 'area', 'month')
+                    ->where('ai.id', $area_items_id[$cont])
+                    ->first();
+
+                //suma de los procesos pacs para este poafdg del mismo mes
+                $pac_presupuesto = $area_item->pacs()->where('mes', $area_item->mes)->sum('presupuesto');
+
+                $plan = $area_item->monto; //Plan
+
+                //maximo que se puede distribuir al responsable de este pac, disponible
+                $total_disponible = $plan - $pac_presupuesto; //Disp.
+
+                $worker = $request->user(); //usuario logueado
+
+                $pac = new Pac();
+                $pac->cod_item = $area_item->item->cod_item;
+                $pac->item = $area_item->item->item;
+                $pac->mes = $area_item->mes;
+                $pac->concepto = 'PROCESO GENERADO AUTOMATICAMENTE';
+                $pac->procedimiento = 'OTRO';
+                $pac->tipo_compra = 'OTRO';
+                $pac->cpc = '';
+                $pac->disponible = $total_disponible;
+                $pac->noEsProcesoPac();
+                $pac->presupuesto = $total_disponible;
+                $pac->area_item()->associate($area_item);
+                $pac->worker()->associate($worker);
+                $pac->save();
+
+                DB::Commit();
+
+            } catch
+            (\Exception $exception) {
+                DB::rollback();
+                return back()->with('message_danger', $exception->getMessage());
+
+            }
+            $cont++;
+        }
+        return redirect()->route('indexPlanificacion')->with('message', 'Se generaron los procesos satisfactoriamente');
     }
 
 

@@ -25,7 +25,7 @@
             </div>
             <div class="panel-body collapse in" id="poa-area">
                 <div class="col-lg-12">
-                    {!! Form::open(['route'=>'pacs.generateAutomaticProcess','method'=>'post','id'=>'imp_reformas_select']) !!}
+                    {!! Form::open(['route'=>'pacs.generateAutomaticProcess','method'=>'post','id'=>'form_proc_automatic']) !!}
                     <div class="table-responsive">
                         <table class="table table-striped table-bordered table-condensed table-hover" id="ai_table"
                                cellspacing="0" width="100%" style="display: none;">
@@ -37,13 +37,13 @@
                             <th style="width: 150px;">Plan</th>
                             <th style="width: 150px;">Disp.</th>
                             <th style="width: 100px;">Mes</th>
-                            <th></th>
+                            <th>Proc.</th>
                             <th style="width: 45px;">
                                 {{--Check de seleccionar todos los check para generar procesos automaticamente--}}
                                 {!! Form::checkbox('select_all_items',null,false,['id'=>'select_all_items','class'=>'checkbox tip','data-placement'=>'top', 'title'=>'Seleccionar todo']) !!}
                                 {{--Crear Procesos Automaticamente con los item seleccionados y sus valores disponibles--}}
                                 @permission('planifica-pac')
-                                {!! Form::button('<i class="fa fa-check-square-o" aria-hidden="true"></i>',['class'=>'btn-xs btn-info tip','data-placement'=>'top', 'title'=>'Procesos Auto.','type'=>'submit']) !!}
+                                {!! Form::button('<i class="fa fa-check-square-o" aria-hidden="true"></i>',['class'=>'btn-xs btn-info tip','data-placement'=>'top', 'title'=>'Procesos Auto.','id'=>'proceso_automatico']) !!}
                                 @endpermission
                             </th>
                             </thead>
@@ -84,7 +84,7 @@
                                     <td align="center">
 
                                         <a href="#">
-                                            {!! Form::checkbox('gen_proc[]',$ai->id,false,['id'=>'ai'.$ai->id]) !!}
+                                            {!! Form::checkbox('gen_proc[]',$ai->id,false,['id'=>'ai'.$ai->id,'class'=>'tip','data-placement'=>'top', 'title'=>'Generar']) !!}
                                         </a>
 
                                     </td>
@@ -389,6 +389,37 @@
         $(document).on('change', '#select_all_items', function (event) {
             $("input[name='gen_proc[]']").prop('checked', $(this).prop("checked"));
         });
+
+        $(document).on('click', '#proceso_automatico', function (e) {
+            e.preventDefault();
+            var form = $("#form_proc_automatic")
+            var url = form.attr('action');
+            var data = form.serialize();
+            swal({
+                    title: "Confirme para continuar!",
+                    text: "Se generará un proceso automaticamente con el monto disponible por cada linea seleccionada!",
+                    type: "info",
+                    showCancelButton: true,
+                    confirmButtonColor: "#DD6B55",
+                    confirmButtonText: "SI!",
+                    cancelButtonText: " NO!",
+                    closeOnConfirm: false,
+                    closeOnCancel: false,
+                    showLoaderOnConfirm: true,
+                },
+                function (isConfirm) {
+                    if (isConfirm) {
+                        form.submit();
+                    }//isConfirm
+                    else {
+                        swal("Cancelado", "Canceló la acción :)", "error");
+                    }
+                });
+
+        });
+
+
+
 
         $(document).on('mouseover', '.tip', function (event) {
             $(this).tooltip();

@@ -1056,7 +1056,7 @@ class ReformaController extends Controller
         Mail::send('emails.new_reforma', ['reforma'=>$reforma], function ($message) use ($user_to) {
 
             $message->from('admin@fedeguayas.com.ec', 'Sistema Gestión del POA');
-            $message->cc(['blanca.silva@fedeguayas.com.ec','rosaedith.rada@fedeguayas.com.ec','rosae.rada@gmail.com']);
+            $message->cc(['blanca.silva@fedeguayas.com.ec']);
             $message->subject('Nueva Reforma');
             $message->to($user_to);
 
@@ -1109,10 +1109,11 @@ class ReformaController extends Controller
             $correos_pac_origen[] = $cpo->pac->worker->email;
         }
 
-        $correos_administradora=['rosaedith.rada@fedeguayas.com.ec','rosae.rada@gmail.com'];
+        //$correos_administradora=['rosaedith.rada@fedeguayas.com.ec','rosae.rada@gmail.com'];
 
         //arreglo con la union de los arreglos de correos eliminando los repetidos
-        $para = array_unique(array_merge($correos_analistas, $correos_pac_origen, $correos_pac_destino,$correos_administradora));
+//        $para = array_unique(array_merge($correos_analistas, $correos_pac_origen, $correos_pac_destino,$correos_administradora));
+        $para = array_unique(array_merge($correos_analistas, $correos_pac_origen, $correos_pac_destino));
 
         //email del usuario que solicita la reforma
         $user_sol = $reforma->user->email;

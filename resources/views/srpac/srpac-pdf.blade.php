@@ -28,11 +28,11 @@
         <table width="50%" border="0">
             <tr>
                 <td><b>PARA:</b></td>
-                <td>Arq. Rosa Edith Rada Alprecht</td>
+                <td>Gerente Organismo Deportivo: Lcdo. Miguel Ángel Delgado Lucín</td>
             </tr>
             <tr>
                 <td></td>
-                <td><b>Administradora</b></td>
+                <td><b>Interventor</b></td>
             </tr>
         </table>
 

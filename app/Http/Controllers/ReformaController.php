@@ -916,12 +916,15 @@ class ReformaController extends Controller
 
         //actualizar los montos de cada poafdg destino (area_item) y los pac_destino
         foreach ($reforma->pac_destino as $pac_dest) {
+
             $pac = Pac::where('id', $pac_dest->pac_id)->first();
             $poa_dest = $pac->area_item;
+
             $poa_dest->monto = $poa_dest->monto + $pac_dest->valor_dest;
             if ($poa_dest->inclusion == AreaItem::INCLUSION_YES) {
                 $poa_dest->inclusion = AreaItem::INCLUSION_NO;
             }
+
             $poa_dest->update();
 
             $srpac = Srpac::with('srpac_destino')->where('pac_id', $pac_dest->pac_id)->get()->last(); //ultimo pdf de Srpac subido
@@ -940,7 +943,9 @@ class ReformaController extends Controller
             }
             $pac->srpac = Pac::NO_APROBADA_SRPAC; //srpac=0
             $pac->update();
+
         }
+
 
 
         //actualizar valores de pacs origen
@@ -949,6 +954,7 @@ class ReformaController extends Controller
 
             $area_item_origen = $pac->area_item;
             $area_item_origen->monto = $area_item_origen->monto - $pac_orig->valor_orig;
+
             $area_item_origen->update();
 
             $srpac = Srpac::with('srpac_destino')->where('pac_id', $pac_orig->pac_id)->get()->last(); //ultimo pdf de Srpac subido
@@ -968,10 +974,11 @@ class ReformaController extends Controller
         $reforma->estado = Reforma::REFORMA_APROBADA;
         $reforma->update();
 
-        $accion = 'aprobada';
-        $this->sendReformaStatusMail($reforma, $accion);
 
             DB::commit();
+
+            $accion = 'aprobada';
+            $this->sendReformaStatusMail($reforma, $accion);
 
         $message = "Reforma aprobada";
         if ($request->ajax()) {

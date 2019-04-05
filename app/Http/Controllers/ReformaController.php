@@ -141,17 +141,12 @@ class ReformaController extends Controller
 
                 break;
 
-            //Solo la realizan los reponsables de reformas, procesos de la misma act, de mes actual a futuro a mismo mes o pasado a presente
+
             case 'INFORMATIVA':
 
-                if ($codigos->grupo_gasto == '51' || $codigos->cod_item == '530606') {
-                    return redirect()->back()->with('message_danger', 'En el grupo de gasto 51 o item 530606 solo se permiten reformas Ministeriales');
+                if ($codigos->grupo_gasto === '51'){
+                    return redirect()->back()->with('message_danger', 'Lo sentimos Ud quiere realizar una Reforma Informativa sobre el item '.$codigos->cod_item.'. Pero solo se adminten reformas Ministeriales para el grupo 51');
                 }
-
-                //descomentar
-//                if ($mes_poa_origen > $month ) {
-//                    return redirect()->back()->with('message_danger', 'No se admiten movimientos desde el futuro para la Reforma Informativa');
-//                }
 
                 if (!($user->hasRole('analista') || $user->hasRole('root'))) {
                     return redirect()->back()->with('message_danger', 'No tiene los permisos necesarios para reformas INFORMATIVA');
@@ -159,19 +154,11 @@ class ReformaController extends Controller
 
                 break;
 
-            //Solo la realizan los reponsables de reformas,
-            // procesos de la misma act, de mes futuro a presente
-            // procesos de la diferentes act, de mes presente a futuro y de futuro a presente
             case 'MINISTERIAL':
 
                 if (!($user->hasRole('analista') || $user->hasRole('root'))) {
                     return redirect()->back()->with('message_danger', 'No tiene los permisos necesarios para reformas MINISTERIAL');
                 }
-
-                //descomentar
-//                if ($mes_poa_origen < $month ) {
-//                    return redirect()->back()->with('message_danger', 'No se admiten movimientos desde el pasado para la Reforma Ministerial');
-//                }
 
                 break;
             default:
@@ -348,6 +335,7 @@ class ReformaController extends Controller
         //Poa_FDG origen sobre el que se hace la reforma:  "item_id" => 17 "area_id" => 2 "monto" => "1400.00" "mes" => 2
         $poa = $reforma->area_item;
         $cod_actividad_origen = $poa->item->cod_actividad;
+        $item_origen = $poa->item->cod_item;
         $mes_poa_origen = $poa->mes;
 
         //mostrar los pac que apareceran en el destino
@@ -372,22 +360,50 @@ class ReformaController extends Controller
                     ->get();
                 break;
 
-            //Solo la realizan los reponsables de reformas, procesos de la misma act, de mes actual a futuro o a mismo mes, y de  pasado a presente
+            /*  INFORMATIVA
+                * Solo la realizan los reponsables de reformas
+                   origen = actividad 1 o 2 => destino =  actividad 1,2,3,4,5,7,8,10 sin importar item. //ok
+                   origen = actividad 3,4,5,7,8,10 => destino =  actividad 3,4,5,7,8,10 sin importar item. //ok
+                   origen = item 530606 act(x) => destino = item 530606 act(x) //  las act de origen y destino tienen que ser las mismas
+            */
             case 'INFORMATIVA':
+
+                $actividad_destino=[];
+
+                if ($cod_actividad_origen==='001' ||
+                    $cod_actividad_origen==='002') {
+
+                    $actividad_destino=['001','002','003','004','005','007','008','010'];
+
+                }
+
+                if ($cod_actividad_origen==='003' ||
+                    $cod_actividad_origen==='004' ||
+                    $cod_actividad_origen==='005' ||
+                    $cod_actividad_origen==='007' ||
+                    $cod_actividad_origen==='008' ||
+                    $cod_actividad_origen==='010') {
+
+                    $actividad_destino=['003','004','005','007','008','010'];
+
+                }
+
                 $pacs = $pacs
-                    ->whereNotIn('p.id', $array_pacs_origen_id)//no mostrar los pac de los k estoy quitando dinero
-                    ->where('i.grupo_gasto', '!=', '51')//no mostrar del grupo gasto 51 solo para ministerial
-                    ->where('p.cod_item', '!=', '530606')//el item 530606 solo para ministerial
-                    //Descomentar
-                    //si mes del origen = mes actual => origen=presente
-//                    ->when($mes_poa_origen==$month,function ($query) use ($cod_actividad_origen,$mes_poa_origen,$array_pacs_origen_id){
-                    // misma actividad de mes actual a futuro o a mismo mes, destino>=origen(presente,futuro)
-//                        return $query->where('i.cod_actividad','=',$cod_actividad_origen)->where('p.mes','>=',$mes_poa_origen)
+                        ->whereNotIn('p.id', $array_pacs_origen_id )//no mostrar los pac de los k estoy quitando dinero
+                        ->whereIn('i.cod_actividad',$actividad_destino )// dependencia de la actividad de origen
+                        ->where('i.grupo_gasto', '!=', '51')// grupo 51 ministerial
+                        ->where('p.mes','>=',$mes_poa_origen) // mes_destino  > origen ( llevar a futuro), sino es ministerial
+                        //Si el item de origen es 530606
+                        ->when($item_origen==='530606',function ($query) use ($cod_actividad_origen,$mes_poa_origen,$array_pacs_origen_id){
+                        return $query
+                                ->where('i.cod_actividad','=',$cod_actividad_origen) // la act destino debe ser la misma que el origen
+                                ->where('p.mes','>=',$mes_poa_origen) // el mes de destino debe ser mayor al de origen (presente a futuro)
+                                ->where('p.cod_item','=','530606'); // el item de destino debe ser tambien el 530606
                     //o no son procesos pac y de la misma actividad al mes actual o futuro y que no sean los del origen
 //                            ->orWhere(function($query) use ($cod_actividad_origen,$mes_poa_origen,$array_pacs_origen_id){
 //                                $query->where('p.proceso_pac', Pac::NO_PROCESO_PAC)->where('i.cod_actividad','=',$cod_actividad_origen)->where('p.mes','>=',$mes_poa_origen)->whereNotIn('p.id', $array_pacs_origen_id);
 //                        });
-//                    })
+                        })
 
                     //Descomentar
                     //si mes_origen < mes_actual => origen=pasado
@@ -401,40 +417,34 @@ class ReformaController extends Controller
 //                    })
 
                     //****************Eliminar despues de descomentar
-                    ->where('i.cod_actividad', '=', $cod_actividad_origen)
-                    ->orWhere(function ($query) use ($cod_actividad_origen, $array_pacs_origen_id) {
-                        $query->where('p.proceso_pac', Pac::NO_PROCESO_PAC)->where('i.cod_actividad', '=', $cod_actividad_origen)->whereNotIn('p.id', $array_pacs_origen_id);
-                    })
+                   // ->where('i.cod_actividad', '=', $cod_actividad_origen)
+//                    ->orWhere(function ($query) use ($cod_actividad_origen, $array_pacs_origen_id) {
+//                        $query
+//                            ->where('p.proceso_pac', Pac::NO_PROCESO_PAC)
+//                            ->where('i.cod_actividad', '=', $cod_actividad_origen)
+//                            ->whereNotIn('p.id', $array_pacs_origen_id);
+//                    })
                     //*********************
                     ->get();
                 break;
 
-            //Solo la realizan los reponsables de reformas,
-            // procesos de la misma act, de mes futuro a presente
-            // procesos de la diferentes act, de mes presente a futuro y de futuro a presente
+
+            /*  MINISTERIAL
+                * Solo la realizan los reponsables de reformas
+                   origen = mes futuro (septiembre) => destino = mes pasado (febrero)
+                   origen = items grupo 51 o item 530606 => destino = cualquier item
+                   origen = item 530606 (act 1,4) => destino = cualquier item // la act de origen es la 1 o 4 y la destino es diferente
+                */
             case 'MINISTERIAL':
                 $pacs = $pacs
                     ->whereNotIn('p.id', $array_pacs_origen_id)//no mostrar los pac de los k estoy quitando dinero
-                    //Descomentar
-                    //si mes del origen > mes actual => origen=futuro
-//                    ->when($mes_poa_origen>$month,function ($query) use ($cod_actividad_origen,$mes_poa_origen,$array_pacs_origen_id,$month){
-                    // misma actividad de mes futuro a mes presente, destino<origen=presente
-//                        return $query->where('i.cod_actividad','=',$cod_actividad_origen)->where('p.mes','=',$month)
-                    //o no son procesos pac y de la misma actividad al mes actual desde futuro y que no sean los del origen
-//                            ->orWhere(function($query) use ($cod_actividad_origen,$mes_poa_origen,$array_pacs_origen_id,$month){
-//                                $query->where('p.proceso_pac', Pac::NO_PROCESO_PAC)->where('i.cod_actividad','=',$cod_actividad_origen)->where('p.mes','=',$month)->whereNotIn('p.id', $array_pacs_origen_id);
-//                            });
-//                    })
-                    //Descomentar
-                    //si mes_origen = mes_actual => origen=presente
-//                    ->when($mes_poa_origen==$month, function ($query) use ($cod_actividad_origen,$month,$array_pacs_origen_id) {
-                    // diferente actividad de presente a futuro destino>origen
-//                        return $query->where('i.cod_actividad','<>',$cod_actividad_origen)->where('p.mes','>',$month)
-                    //o no son procesos pac y de diferente actividad al mes actual y que no sean los del origen
-//                            ->orWhere(function($query) use ($cod_actividad_origen,$month,$array_pacs_origen_id){
-//                                $query->where('p.proceso_pac', Pac::NO_PROCESO_PAC)->where('i.cod_actividad','<>',$cod_actividad_origen)->where('p.mes','>',$month)->whereNotIn('p.id', $array_pacs_origen_id);
-//                            });
-//                    })
+                    ->where('p.mes','<',$mes_poa_origen)
+                        //si origen es item 530606
+                    ->when((($item_origen==='530606')&& ($cod_actividad_origen==='001' || $cod_actividad_origen==='004') ),function ($query) use ($cod_actividad_origen,$mes_poa_origen,$array_pacs_origen_id){
+                        return $query
+                            ->where('i.cod_actividad','!=',$cod_actividad_origen); // la act destino debe ser diferente a la de origen
+                    })
+
                     //Descomentar
                     //si mes_origen > mes_actual => origen=futuro
 //                    ->when($mes_poa_origen>$month, function ($query) use ($cod_actividad_origen,$month,$array_pacs_origen_id) {
@@ -447,9 +457,9 @@ class ReformaController extends Controller
 //                    })
 
                     //***********Eliminar despues de descomentar
-                    ->orWhere(function ($query) use ($cod_actividad_origen, $array_pacs_origen_id) {
-                        $query->where('p.proceso_pac', Pac::NO_PROCESO_PAC)->whereNotIn('p.id', $array_pacs_origen_id);
-                    })
+//                    ->orWhere(function ($query) use ($cod_actividad_origen, $array_pacs_origen_id) {
+//                        $query->where('p.proceso_pac', Pac::NO_PROCESO_PAC)->whereNotIn('p.id', $array_pacs_origen_id);
+//                    })
                     //**************************
                     ->get();
                 break;

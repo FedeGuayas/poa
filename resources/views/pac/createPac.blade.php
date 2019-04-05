@@ -98,7 +98,7 @@
                         </div>
                         <div class="col-lg-6">
                             <div class="form-group">
-                                {!! Form::checkbox('proceso_pac',null,true,['id'=>'proceso_pac']) !!}
+                                {!! Form::checkbox('proceso_pac',null,false,['id'=>'proceso_pac']) !!}
                                 {!! Form::label('proceso_pac','Seleccione si es un proceso PAC') !!}
                             </div>
                         </div>

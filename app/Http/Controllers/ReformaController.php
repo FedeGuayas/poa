@@ -602,8 +602,8 @@ class ReformaController extends Controller
 //                            return response()->json(["message" => $message, "tipo" => 'error']);
 //                        }
 
-                        if ($pac->area_item->item->grupo_gasto == '51' || $pac->cod_item == '530606') {
-                            $message = 'No se permiten reformas INTERNAS para el Grupo de Gasto 51 ni la partida 530606';
+                        if ($pac->area_item->item->grupo_gasto == '51') {
+                            $message = 'No se permiten reformas INTERNAS para el Grupo de Gasto 51 ';
                             return response()->json(["message" => $message, "tipo" => 'error']);
                         }
 
@@ -708,13 +708,13 @@ class ReformaController extends Controller
                         $pac = Pac::where('id', $pac_id[$cont])->with('area_item')->first();//pac destino
 
                         //solo se permite esta reforma destinos con la misma actividad del origen
-                        if ($pac->area_item->item->cod_actividad != $cod_actividad_origen) {
-                            $message = 'En la reforma INFORMATIVA solo se admiten como destino los items poa de la misma actividad';
-                            return response()->json(["message" => $message, "tipo" => 'error']);
-                        }
+//                        if ($pac->area_item->item->cod_actividad != $cod_actividad_origen) {
+//                            $message = 'En la reforma INFORMATIVA solo se admiten como destino los items poa de la misma actividad';
+//                            return response()->json(["message" => $message, "tipo" => 'error']);
+//                        }
 
                         //Grupo gasto 51 solo para ministerial
-                        if ($pac->area_item->item->grupo_gasto == '51' || $pac->cod_item == '530606') {
+                        if ($pac->area_item->item->grupo_gasto == '51') {
                             $message = 'No se permiten reformas INFORMATIVAS para el Grupo de Gasto 51, o el item 530606';
                             return response()->json(["message" => $message, "tipo" => 'error']);
                         }

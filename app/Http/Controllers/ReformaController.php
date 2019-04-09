@@ -438,7 +438,7 @@ class ReformaController extends Controller
             case 'MINISTERIAL':
                 $pacs = $pacs
                     ->whereNotIn('p.id', $array_pacs_origen_id)//no mostrar los pac de los k estoy quitando dinero
-                    ->where('p.mes','<',$mes_poa_origen)
+//                    ->where('p.mes','<',$mes_poa_origen)
                         //si origen es item 530606
                     ->when((($item_origen==='530606')&& ($cod_actividad_origen==='001' || $cod_actividad_origen==='004') ),function ($query) use ($cod_actividad_origen,$mes_poa_origen,$array_pacs_origen_id){
                         return $query

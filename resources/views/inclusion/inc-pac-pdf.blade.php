@@ -24,7 +24,7 @@
         <table width="50%" border="0" style="margin-top: 20px; margin-bottom: 30px;">
             <tr>
                 <td><b>PARA:</b></td>
-                <td>Gerente Organismo Deportivo: Lcdo. Miguel Ángel Delgado Lucín</td>
+                <td>Gerente Organismo Deportivo: Eco. Bella Corina González Torres</td>
             </tr>
             <tr>
                 <td></td>

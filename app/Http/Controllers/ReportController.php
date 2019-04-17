@@ -573,9 +573,9 @@ class ReportController extends Controller
             $elaborado_nombre = 'Ing. Paolo Guerrero Moncayo';
             $elaborado_cargo = 'Director Financiero';
             $elaborado_ci = '0925045791';
-            $aprobado_nombre = 'Lcdo. Miguel Ángel Delgado Lucín';
+            $aprobado_nombre = 'Eco. Bella Corina González Torres';
             $aprobado_cargo = 'Interventor';
-            $aprobado_ci = '0923567556';
+            $aprobado_ci = '0914120068';
         } elseif ($user->hasRole('analista')) {
             //trabajadores que pertenecen al mismo area del trabajador logeado y esta en el departamento direccion (jefe de area)
             $jefe_area = Worker::whereHas('departamento', function ($query) use ($area_id) {

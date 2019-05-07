@@ -442,7 +442,8 @@ class ReformaController extends Controller
                         //si origen es item 530606
                     ->when((($item_origen==='530606')&& ($cod_actividad_origen==='001' || $cod_actividad_origen==='004') ),function ($query) use ($cod_actividad_origen,$mes_poa_origen,$array_pacs_origen_id){
                         return $query
-                            ->where('i.cod_actividad','!=',$cod_actividad_origen); // la act destino debe ser diferente a la de origen
+                            ->whereNotIn('p.id', $array_pacs_origen_id);
+//                            ->where('i.cod_actividad','!=',$cod_actividad_origen); // la act destino debe ser diferente a la de origen
                     })
 
                     //Descomentar
